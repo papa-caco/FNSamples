@@ -5,30 +5,13 @@ import java.util.List;
 
 import ar.com.lpa.samples.model.Principal;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
+import lombok.Getter;
 
+@Getter
 public class PrincipalRepo {
-	private List<Principal> principals = new ArrayList<>();
-	
-	public List <Principal> getPrincipals() {
-		return this.principals;
-	}
-	
-    public void showCurrentPrincipals() {
-		int i = 0;
-		for (Principal principal : this.principals) {
-			i++;
-			System.out.println("\nPrincipal#: " + i);
-			System.out.println("   " + principal.getPrincipalType().toString());
-			System.out.println("   " + principal.getSamAccountName());
-			System.out.println("   " + principal.getSId());
-			System.out.println("   " + principal.getDistinguishedName());
-			System.out.println("   ---------------------------------");
-			
-		}
-		System.out.println("Total Principals : " + this.principals.size());
-    }
-    
-    public void addNewPrincipalFromDn(String dN, String type, P8Realm p8realm) 
+	private final List<Principal> principals = new ArrayList<>();
+
+	public void addNewPrincipalFromDn(String dN, String type, P8Realm p8realm)
     {
     	if (!existsPrincipalDn(dN)) {
     		Principal principal = new Principal();
