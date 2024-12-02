@@ -1,0 +1,58 @@
+package ar.com.lpa.samples.util;
+
+import org.apache.log4j.Logger;
+
+import com.filenet.api.core.Document;
+import com.filenet.api.core.Folder;
+import com.filenet.api.security.AccessPermission;
+
+import lombok.Getter;
+
+@Getter
+public class P8Logger {
+		
+    public static void logFolderProperties(Logger logger, Folder folder, int count) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug(" Folder#: " + count);
+            logger.debug("        Id: " + folder.get_Id().toString());
+            logger.debug("      Name: " + folder.get_Name());
+            logger.debug("     Class: " + folder.getClassName());
+            logger.debug("     Owner: " + folder.get_Owner());
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + folder, e);
+        }
+    }
+    
+    public static void logDocumentProperties(Logger logger, Document document, int count) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Document#: " + count);
+            logger.debug("          Id: " + document.get_Id().toString());
+            logger.debug("        Name: " + document.get_Name());
+            logger.debug("       Class: " + document.getClassName());
+            logger.debug("       Owner: " + document.get_Owner());
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + document, e);
+        }
+    }
+    
+    public static void logPermisionValues(Logger logger, AccessPermission permission) 
+    {
+    	 try {
+         		logger.debug("	     GranteeName : " + permission.get_GranteeName());
+         		logger.debug("	     GranteeType : " + permission.get_GranteeType().toString());
+         		logger.debug("	PermissionSource : " + permission.get_PermissionSource().toString());
+         		logger.debug("	     Accesslevel : " + permission.get_AccessMask().toString());
+         		logger.debug("	      Accesstype : " + permission.get_AccessType().toString());
+         		logger.debug("	Inheritabledepth : " + permission.get_InheritableDepth());
+         		logger.debug("        -----------------");
+         	} 
+    	 catch (Exception e) {
+             logger.error("Error loggeando entidad: " + permission, e);
+         }
+    }
+
+}
