@@ -1,0 +1,1 @@
+Used to create some tools using FileNet java API
