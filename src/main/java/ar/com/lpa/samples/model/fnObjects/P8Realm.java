@@ -11,10 +11,10 @@ import lombok.Getter;
 
 @Getter
 public class P8Realm {
-	private P8Domain p8domain = new P8Domain();
+	private final P8Domain p8domain = new P8Domain();
 	private Realm realm = null;
-    private RealmUsersRepo realmUsers = new RealmUsersRepo();
-    private RealmGroupsRepo realmGroups = new RealmGroupsRepo();
+    private final RealmUsersRepo realmUsers = new RealmUsersRepo();
+    private final RealmGroupsRepo realmGroups = new RealmGroupsRepo();
 	
 	public void setP8Domain() 
 	{
@@ -30,9 +30,9 @@ public class P8Realm {
 			if (realm == null) {
 				this.realm = this.p8domain.getEntireNetwork().get_MyRealm();
 				this.setUserGroupRepos();
-				logger.info("Found " +String.valueOf(this.getRealmUsers().getRealmUsers().size()) 
-				+ " Users & " + String.valueOf(this.getRealmGroups().getRealmGroups().size()) 
-				+ " Groups at domain: " + this.getRealm().get_Name());
+				logger.info(String.format("Found %s Users & %s Groups at domain: %s",
+						this.getRealmUsers().getRealmUsers().size(),
+						this.getRealmGroups().getRealmGroups().size(), this.getRealm().get_Name()));
 			}
 		} catch(Exception e){
 	   		 e.printStackTrace();
