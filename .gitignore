@@ -26,9 +26,11 @@ target/
 /nbdist/
 /.nb-gradle/
 build/
-/target/classes/ar/com/lpa/samples/*.class
+target/classes/ar/com/lpa/samples/*.class
 !**/src/main/**/build/
 !**/src/test/**/build/
+
+target/classes/ar/com/lpa/samples/
 
 ### VS Code ###
 .vscode/
