@@ -3,7 +3,6 @@ package ar.com.lpa.samples;
 import java.util.Iterator;
 
 import ar.com.lpa.samples.util.*;
-import com.filenet.api.core.Factory;
 import org.apache.log4j.Logger;
 
 import com.filenet.api.core.Document;
@@ -65,9 +64,8 @@ public class PrincipalCollectorFromObjects
                         currentPrincipals.addPrincipalFromObjectOwner(objectOwner, p8realm);
                         AccessPermissionList permissions = customObject.get_Permissions();
                         P8Logger.logCustomObjectProperties(logger, customObject, count, permissions.size());
-                        if (!(permissions.isEmpty())) {
+                        if (!(permissions.isEmpty()))
                             currentPrincipals.addPrincipalsFromPermissions(permissions, p8realm);
-                        }
                     }  while (it.hasNext()) ;
 
                 }
@@ -118,6 +116,7 @@ public class PrincipalCollectorFromObjects
 		PrincipalCollectorFromObjects.p8realm.setConnectionCeUri(configLoader.getProperty("ceURI"));
 		PrincipalCollectorFromObjects.p8realm.setConnectionUser(configLoader.getProperty("userName"));
 		PrincipalCollectorFromObjects.p8realm.setConnectionPswd(configLoader.getProperty("password"));
+        p8realm.setRealm(logger);
 		
 		String objectStore = configLoader.getProperty("objectStore");
         String documentSearch = configLoader.getProperty("documentSearch");

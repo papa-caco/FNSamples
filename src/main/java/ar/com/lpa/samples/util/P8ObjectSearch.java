@@ -11,7 +11,6 @@ import org.apache.log4j.Logger;
 
 public class P8ObjectSearch {
     public static IndependentObjectSet getFnObjectsFromSearch(P8Realm p8realm, Logger logger, String osName, String sqlSearch){
-        p8realm.setRealm(logger);
         ObjectStore objStore = Factory.ObjectStore.fetchInstance(p8realm.getP8domain().getDomain(), osName,null);
         SearchScope searchScope = new SearchScope(objStore);
         SearchSQL searchSQL = new SearchSQL(sqlSearch);

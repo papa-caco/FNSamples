@@ -37,7 +37,4 @@ public class FnAccessPermission {
         return fnAccessPermission;
     }
 
-
-
-
 }

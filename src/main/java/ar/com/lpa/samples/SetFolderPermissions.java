@@ -3,72 +3,60 @@ package ar.com.lpa.samples;
 import java.io.IOException;
 import java.util.Iterator;
 
-import javax.security.auth.Subject;
-
-import com.filenet.api.core.Connection;
-import com.filenet.api.core.Domain;
 import com.filenet.api.core.Factory;
-import com.filenet.api.core.ObjectStore;
+import com.filenet.api.core.Folder;
+import org.apache.log4j.Logger;
+
+
+
+import ar.com.lpa.samples.model.fnObjects.P8Realm;
+import ar.com.lpa.samples.util.P8ObjectSearch;
+import com.filenet.api.collection.IndependentObjectSet;
+import com.filenet.api.events.Event;
 import com.filenet.api.collection.AccessPermissionList;
 import com.filenet.api.constants.AccessType;
 import com.filenet.api.constants.RefreshMode;
+
 import com.filenet.api.security.AccessPermission;
-import com.filenet.api.util.UserContext;
+
 
 public class SetFolderPermissions {
 	
-    private static Connection conn = null;
+    private static final P8Realm realm = new P8Realm();
+	private static final Logger logger = Logger.getLogger(SetFolderPermissions.class);
 
-    public static Connection getCEConn()
-    {
-        try {
-            String ceURI =    "https://w2019p8.lab.grupolpa.com:9443/wsi/FNCEWS40MTOM/";
-            String userName = "p85ceadmin";//"sarasa";
-            String password = "Filenet01";//"Lpa23291$";
-            if(conn==null){
-            	conn = Factory.Connection.getConnection(ceURI);
-            	Subject subject = UserContext.createSubject(conn, userName, password, null);
-            	UserContext uc = UserContext.get();
-            	uc.pushSubject(subject);
-            }
 
-        } catch (Exception e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-        System.out.println("CE Connection"+conn);
-        return conn;
-    }
     
 
 
-	public static void getFolderPermissions(String osName, String folder) throws IOException
+	public static void getObjectDetailsAndPermissions(String osName, String sqlSearch) throws IOException
     {
         try {
-			Connection conn = getCEConn();
-			Domain domain = Factory.Domain.fetchInstance(conn, null, null);
-			ObjectStore objStore = Factory.ObjectStore.fetchInstance(domain, osName, null);
-			com.filenet.api.core.Folder folderOj = Factory.Folder.fetchInstance(objStore, folder, null);
+			IndependentObjectSet result = P8ObjectSearch.getFnObjectsFromSearch(realm,logger,osName,sqlSearch);
+			if (!(result.isEmpty())){
+				Iterator<Event> it= result.iterator();
+				Event object = (Event) it.next();
+				System.out.println(" Object name :: " + object.get_Name());
+				System.out.println("   Object Id :: " + object.get_Id().toString());
+				System.out.println("Object Class :: " + object.getClassName());
+				System.out.println("       Owner :: " + object.get_Owner());
+				AccessPermissionList permissions= object.get_Permissions();
+				Iterator<AccessPermission> it1 = permissions.iterator();
 
-			System.out.println("   P8 Domain :: " + domain.get_Name());
-			System.out.println("Object Store :: " + objStore.get_Name());
-			System.out.println(" Folder name :: " + folderOj.get_FolderName());
-			System.out.println("   Folder Id :: " + folderOj.get_Id().toString());
-			System.out.println("       Owner :: " + folderOj.get_Owner());
-			AccessPermissionList permissions= folderOj.get_Permissions();
-			@SuppressWarnings("unchecked")
-			Iterator<AccessPermission> it1 = permissions.iterator();
-			            
-              while (it1.hasNext())
-              {
-              	AccessPermission permission = (AccessPermission)it1.next();
-              	System.out.println("\n	GranteeName = "+ permission.get_GranteeName());
-              	System.out.println("	GranteeType = " + permission.get_GranteeType().toString());
-              	System.out.println("	PermissionSource = " +permission.get_PermissionSource().toString());
-              	System.out.println("	Accesslevel = " + permission.get_AccessMask().toString());
-              	System.out.println("	Accesstype = " +permission.get_AccessType().toString());
-              	System.out.println("	Inheritabledepth = " +permission.get_InheritableDepth());
-              }
+                if (it1.hasNext()) {
+                    do {
+                        AccessPermission permission = (AccessPermission) it1.next();
+                        System.out.println("\n	GranteeName = " + permission.get_GranteeName());
+                        System.out.println("	GranteeType = " + permission.get_GranteeType().toString());
+                        System.out.println("	PermissionSource = " + permission.get_PermissionSource().toString());
+                        System.out.println("	Accesslevel = " + permission.get_AccessMask().toString());
+                        System.out.println("	Accesstype = " + permission.get_AccessType().toString());
+                        System.out.println("	Inheritabledepth = " + permission.get_InheritableDepth());
+                    } while (it1.hasNext());
+                }
+
+			} else System.out.println("No objects found...");
+
 			System.out.println("Done");
         	}
             catch(Exception e){
@@ -76,19 +64,15 @@ public class SetFolderPermissions {
             }
     }
 	
-	public static void setFolderPermission(String osName, String folder, String user) throws IOException
+	public static void setFolderPermission(String osName, String folderPath, String user) throws IOException
     {
         try {
-			Connection conn = getCEConn();
-			Domain domain = Factory.Domain.fetchInstance(conn, null, null);
-			ObjectStore objStore = Factory.ObjectStore.fetchInstance(domain, osName, null);
 
-			com.filenet.api.core.Folder folderOj = Factory.Folder.fetchInstance(objStore, folder, null);
-			System.out.println("   P8 Domain :: " + domain.get_Name());
-			System.out.println("Object Store :: " + objStore.get_Name());
-			System.out.println("      Folder :: " + folderOj.get_Name());
+			Folder folder = Factory.Folder.fetchInstance(Factory.ObjectStore.fetchInstance(realm.getP8domain().getDomain(), osName, null),
+					folderPath, null);
+			System.out.println("      Folder :: " + folder.get_Name());
 			
-			folderOj.set_Owner(user);
+			folder.set_Owner(user);
 
 			AccessPermission permission = Factory.AccessPermission.createInstance();
 			permission.set_GranteeName(user);
@@ -102,11 +86,11 @@ public class SetFolderPermissions {
 			//permission.set_AccessMask(new Integer(AccessLevel.WRITE_FOLDER_AS_INT));//135155
 			//permission.set_AccessMask(new Integer(AccessLevel.FULL_CONTROL_FOLDER_AS_INT));//999415
 
-			AccessPermissionList permissions = folderOj.get_Permissions();
+			AccessPermissionList permissions = folder.get_Permissions();
 			permissions.clear();
 			permissions.add(permission);
-			folderOj.set_Permissions(permissions);
-			folderOj.save(RefreshMode.REFRESH);
+			folder.set_Permissions(permissions);
+			folder.save(RefreshMode.REFRESH);
 			System.out.println("Done");
         	}
             catch(Exception e){
@@ -116,8 +100,12 @@ public class SetFolderPermissions {
 
 	public static void main(String[] args) throws IOException 
 	{
-		getFolderPermissions("OS1_FVG", "/sarasa");
-		setFolderPermission("OS1_FVG", "/sarasa", "administrator");
+		realm.setConnectionCeUri("https://w2019p8.lab.grupolpa.com:9443/wsi/FNCEWS40MTOM/");
+		realm.setConnectionUser("p85ceadmin");
+		realm.setConnectionPswd("Filenet01");
+		realm.setRealm(logger);
+		getObjectDetailsAndPermissions("objst1","SELECT * FROM Event");
+		//setFolderPermission("OS1_FVG", "/sarasa", "administrator");
 
 	}
 }
