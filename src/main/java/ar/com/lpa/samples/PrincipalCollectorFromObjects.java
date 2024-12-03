@@ -3,10 +3,12 @@ package ar.com.lpa.samples;
 import java.util.Iterator;
 
 import ar.com.lpa.samples.util.*;
+import com.filenet.api.core.Factory;
 import org.apache.log4j.Logger;
 
 import com.filenet.api.core.Document;
 import com.filenet.api.core.Folder;
+import com.filenet.api.core.CustomObject;
 import com.filenet.api.collection.AccessPermissionList;
 import com.filenet.api.collection.IndependentObjectSet;
 
@@ -16,7 +18,6 @@ import ar.com.lpa.samples.repository.PrincipalRepo;
 public class PrincipalCollectorFromObjects
 {
 	private static final Logger logger = Logger.getLogger(PrincipalCollectorFromObjects.class);
-
     private static final P8Realm p8realm = new P8Realm();
     private static final PrincipalRepo currentPrincipals = new PrincipalRepo();
  
@@ -42,13 +43,40 @@ public class PrincipalCollectorFromObjects
 
                 }
                 	logger.info("Total Documents: " + count);
-                } else {
-                	logger.info("No documents were found!");
-                }
+                } else logger.info("No documents were found!");
             }
             catch(Exception e){
                 e.printStackTrace();
             }
+    }
+
+    public static void collectPrincipalsFromCustomObjects(String osName, String customObjectSearch) {
+        try{
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm, logger, osName, customObjectSearch);
+            if(!(independentObjectSet.isEmpty())){
+                int count=0;
+                @SuppressWarnings("rawtypes")
+                Iterator it=independentObjectSet.iterator();
+                if (it.hasNext()) {
+                    do {
+                        count++;
+                        CustomObject customObject = (CustomObject) it.next();
+                        String objectOwner = customObject.get_Owner();
+                        currentPrincipals.addPrincipalFromObjectOwner(objectOwner, p8realm);
+                        AccessPermissionList permissions = customObject.get_Permissions();
+                        P8Logger.logCustomObjectProperties(logger, customObject, count, permissions.size());
+                        if (!(permissions.isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(permissions, p8realm);
+                        }
+                    }  while (it.hasNext()) ;
+
+                }
+                logger.info("Total Custom Objects: " + count);
+            } else logger.info("No custom objects were found!");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
     }
     
     public static void collectPrincipalsFromFolders(String osName, String folderSearch) {
@@ -94,8 +122,10 @@ public class PrincipalCollectorFromObjects
 		String objectStore = configLoader.getProperty("objectStore");
         String documentSearch = configLoader.getProperty("documentSearch");
         String folderSearch = configLoader.getProperty("folderSearch");
+        String customObjectSearch = configLoader.getProperty("customObjectSearch");
 		collectPrincipalsFromDocuments(objectStore, documentSearch);
 		collectPrincipalsFromFolders(objectStore, folderSearch);
+        collectPrincipalsFromCustomObjects(objectStore, customObjectSearch);
 		//currentPrincipals.showCurrentPrincipals();
 		/*String jsonOutput = JsonExporter.exportToJson(currentPrincipals);
 		if (jsonOutput != null) {
