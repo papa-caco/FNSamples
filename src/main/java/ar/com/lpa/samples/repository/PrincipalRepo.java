@@ -15,6 +15,38 @@ import lombok.Getter;
 public class PrincipalRepo {
 	private final List<Principal> principals = new ArrayList<>();
 
+	public void addPrincipalFromObjectOwner(String objectOwner, P8Realm p8realm){
+		if (objectOwner != null && objectOwner.startsWith("CN=")) {
+			this.addNewPrincipalFromDn(objectOwner, "USER", p8realm);
+		} else if (objectOwner != null && objectOwner.contains("@")) {
+			String ownerShortName = Utilities.extractShortName(objectOwner);
+			this.addNewPrincipalFromShortName(ownerShortName, "USER", p8realm);
+		}
+	}
+
+	public void addPrincipalsFromPermissions(AccessPermissionList permissions, P8Realm p8realm)
+	{
+		@SuppressWarnings("rawtypes")
+		Iterator it1 = permissions.iterator();
+		if (it1.hasNext()) {
+			do {
+				AccessPermission permission = (AccessPermission) it1.next();
+				String granteeName = permission.get_GranteeName();
+				String principalType = permission.get_GranteeType().toString();
+				if (principalType.equals("USER") || principalType.equals("GROUP")) {
+					if (granteeName.contains("@")) {
+						String shortName = Utilities.extractShortName(granteeName);
+						this.addNewPrincipalFromShortName(shortName, principalType, p8realm);
+	
+					} else {
+						this.addNewPrincipalFromDn(granteeName, principalType, p8realm);
+					}
+				}
+				//P8Logger.logPermisionValues(logger, permission);
+			} while (it1.hasNext());
+		}
+	}
+
 	private void addNewPrincipalFromDn(String dN, String type, P8Realm p8realm)
     {
     	if (!existsPrincipalDn(dN)) {
@@ -49,39 +81,7 @@ public class PrincipalRepo {
     	}
     }
 
-	public void addPrincipalFromObjectOwner(String objectOwner, P8Realm p8realm){
-		if (objectOwner != null && objectOwner.startsWith("CN=")) {
-			this.addNewPrincipalFromDn(objectOwner, "USER", p8realm);
-		} else if (objectOwner != null && objectOwner.contains("@")) {
-			String ownerShortName = Utilities.extractShortName(objectOwner);
-			this.addNewPrincipalFromShortName(ownerShortName, "USER", p8realm);
-		}
-	}
-
-	public void addPrincipalsFromPermissions(AccessPermissionList permissions, P8Realm p8realm)
-	{
-		@SuppressWarnings("rawtypes")
-		Iterator it1 = permissions.iterator();
-		if (it1.hasNext()) {
-			do {
-				AccessPermission permission = (AccessPermission) it1.next();
-				String granteeName = permission.get_GranteeName();
-				String principalType = permission.get_GranteeType().toString();
-				if (principalType.equals("USER") || principalType.equals("GROUP")) {
-					if (granteeName.contains("@")) {
-						String shortName = Utilities.extractShortName(granteeName);
-						this.addNewPrincipalFromShortName(shortName, principalType, p8realm);
-
-					} else {
-						this.addNewPrincipalFromDn(granteeName, principalType, p8realm);
-					}
-				}
-				//P8Logger.logPermisionValues(logger, permission);
-			} while (it1.hasNext());
-		}
-	}
-    
-    private boolean existsPrincipalDn(String dN) 
+	private boolean existsPrincipalDn(String dN) 
     {
         for (Principal principal : principals) {
             if (dN.equals(principal.getDistinguishedName())) {

@@ -34,3 +34,4 @@ target/classes/ar/com/lpa/samples/
 
 ### VS Code ###
 .vscode/
+/bin/
