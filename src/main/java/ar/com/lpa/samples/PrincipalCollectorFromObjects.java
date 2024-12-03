@@ -7,7 +7,6 @@ import org.apache.log4j.Logger;
 
 import com.filenet.api.core.Document;
 import com.filenet.api.core.Folder;
-import com.filenet.api.security.AccessPermission;
 import com.filenet.api.collection.AccessPermissionList;
 import com.filenet.api.collection.IndependentObjectSet;
 
@@ -27,40 +26,20 @@ public class PrincipalCollectorFromObjects
             if(!(independentObjectSet.isEmpty())){
                 int count=0;
                 @SuppressWarnings("rawtypes")
-				Iterator it=independentObjectSet.iterator();            
-                while(it.hasNext())    {
-                    count++;           	
-                    Document document =(Document)it.next();
-                    String documentOwner = document.get_Owner();
-                    if (documentOwner != null && documentOwner.startsWith("CN=")) {
-                    	currentPrincipals.addNewPrincipalFromDn(documentOwner, "USER", p8realm);
-                    }
-                    else if (documentOwner != null && documentOwner.contains("@")) {
-                    	String ownerShortName = Utilities.extractShortName(documentOwner);
-                    	currentPrincipals.addNewPrincipalFromShortName(ownerShortName, "USER", p8realm);	
-                    }
-                    P8Logger.logDocumentProperties(logger, document, count);
-                    AccessPermissionList permissions = document.get_Permissions();
-                    @SuppressWarnings("rawtypes")
-					Iterator it1 = permissions.iterator();
+				Iterator it=independentObjectSet.iterator();
+                if (it.hasNext()) {
+                    do {
+                        count++;
+                        Document document = (Document) it.next();
+                        String documentOwner = document.get_Owner();
+                        currentPrincipals.addPrincipalFromObjectOwner(documentOwner, p8realm);
+                        AccessPermissionList permissions = document.get_Permissions();
+                        P8Logger.logDocumentProperties(logger, document, count, permissions.size());
+                        if (!(permissions.isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(permissions, p8realm);
+                        }
+                    }  while (it.hasNext()) ;
 
-                    if (it1.hasNext()) {
-                        do {
-                            AccessPermission permission = (AccessPermission) it1.next();
-                            String granteeName = permission.get_GranteeName();
-                            String principalType = permission.get_GranteeType().toString();
-                            if (principalType.equals("USER") || principalType.equals("GROUP")) {
-                                if (granteeName.contains("@")) {
-                                    String shortName = Utilities.extractShortName(granteeName);
-                                    currentPrincipals.addNewPrincipalFromShortName(shortName, principalType, p8realm);
-
-                                } else {
-                                    currentPrincipals.addNewPrincipalFromDn(granteeName, principalType, p8realm);
-                                }
-                            }
-                            P8Logger.logPermisionValues(logger, permission);
-                        } while (it1.hasNext());
-                    }
                 }
                 	logger.info("Total Documents: " + count);
                 } else {
@@ -85,40 +64,18 @@ public class PrincipalCollectorFromObjects
                         count++;
                         Folder folder = (Folder) it.next();
                         String folderOwner = folder.get_Owner();
-                        P8Logger.logFolderProperties(logger, folder, count);
-                        if (folderOwner != null && folderOwner.startsWith("CN=")) {
-                            currentPrincipals.addNewPrincipalFromDn(folderOwner, "USER", p8realm);
-                        } else if (folderOwner != null && folderOwner.contains("@")) {
-                            String ownerShortName = Utilities.extractShortName(folderOwner);
-                            currentPrincipals.addNewPrincipalFromShortName(ownerShortName, "USER", p8realm);
-                        }
+                        currentPrincipals.addPrincipalFromObjectOwner(folderOwner, p8realm);
                         AccessPermissionList permissions = folder.get_Permissions();
-                        @SuppressWarnings("rawtypes")
-                        Iterator it1 = permissions.iterator();
-
-                        if (it1.hasNext()) {
-                            do {
-                                AccessPermission permission = (AccessPermission) it1.next();
-                                String granteeName = permission.get_GranteeName();
-                                String principalType = permission.get_GranteeType().toString();
-                                if (principalType.equals("USER") || principalType.equals("GROUP")) {
-                                    if (granteeName.contains("@")) {
-                                        String shortName = Utilities.extractShortName(granteeName);
-                                        currentPrincipals.addNewPrincipalFromShortName(shortName, principalType, p8realm);
-
-                                    } else {
-                                        currentPrincipals.addNewPrincipalFromDn(granteeName, principalType, p8realm);
-                                    }
-                                }
-                                P8Logger.logPermisionValues(logger, permission);
-                            } while (it1.hasNext());
+                        P8Logger.logFolderProperties(logger, folder, count, permissions.size());
+                        if (!(permissions.isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(permissions, p8realm);
                         }
                     } else {
                         break;
                     }
                 }
                 	logger.info("Total Folders: " + count);
-                } else logger.info("No documents were found!");
+                } else logger.info("No folders were found!");
             }
             catch(Exception e){
                 e.printStackTrace();

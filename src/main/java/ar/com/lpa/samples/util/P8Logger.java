@@ -11,7 +11,7 @@ import lombok.Getter;
 @Getter
 public class P8Logger {
 		
-    public static void logFolderProperties(Logger logger, Folder folder, int count) {
+    public static void logFolderProperties(Logger logger, Folder folder, int count, int permissionsCount) {
         try {
             // Loggear los valores obtenidos
             logger.debug(" Folder#: " + count);
@@ -19,20 +19,22 @@ public class P8Logger {
             logger.debug("      Name: " + folder.get_Name());
             logger.debug("     Class: " + folder.getClassName());
             logger.debug("     Owner: " + folder.get_Owner());
+            logger.debug("Permissions #: " + permissionsCount);
 
         } catch (Exception e) {
             logger.error("Error loggeando entidad: " + folder, e);
         }
     }
     
-    public static void logDocumentProperties(Logger logger, Document document, int count) {
+    public static void logDocumentProperties(Logger logger, Document document, int count, int permissionsCount) {
         try {
             // Loggear los valores obtenidos
             logger.debug("Document#: " + count);
-            logger.debug("          Id: " + document.get_Id().toString());
-            logger.debug("        Name: " + document.get_Name());
-            logger.debug("       Class: " + document.getClassName());
-            logger.debug("       Owner: " + document.get_Owner());
+            logger.debug("           Id: " + document.get_Id().toString());
+            logger.debug("         Name: " + document.get_Name());
+            logger.debug("        Class: " + document.getClassName());
+            logger.debug("        Owner: " + document.get_Owner());
+            logger.debug("Permissions #: " + permissionsCount);
 
         } catch (Exception e) {
             logger.error("Error loggeando entidad: " + document, e);

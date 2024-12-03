@@ -6,6 +6,7 @@ import com.filenet.api.constants.AccessLevel;
 import com.filenet.api.constants.PermissionSource;
 
 
+import com.filenet.api.security.AccessPermission;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,9 +18,24 @@ public class FnAccessPermission {
     private String granteeName;
     private PrincipalType principalType;
     private PermissionSource permissionSource;
-    private AccessLevel accessLevel;
+    private Integer accessMask;
     private AccessType accessType;
     private Integer inheritableDepth;
+
+    public FnAccessPermission constructFromAccessPermission(String objectId, FnObjectType fnObjectType, AccessPermission accessPermission)
+    {
+        FnAccessPermission fnAccessPermission = new FnAccessPermission();
+        fnAccessPermission.setObjectId(objectId);
+        fnAccessPermission.setFnObjectType(fnObjectType);
+        fnAccessPermission.setGranteeName(accessPermission.get_GranteeName());
+        fnAccessPermission.setPrincipalType(PrincipalType.valueOf(accessPermission.get_GranteeType().toString()));
+        fnAccessPermission.setPermissionSource(accessPermission.get_PermissionSource());
+        fnAccessPermission.setAccessMask(accessPermission.get_AccessMask());
+        fnAccessPermission.setAccessType(accessPermission.get_AccessType());
+        fnAccessPermission.setInheritableDepth(fnAccessPermission.getInheritableDepth());
+
+        return fnAccessPermission;
+    }
 
 
 
