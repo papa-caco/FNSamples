@@ -1,5 +1,6 @@
 package ar.com.lpa.samples.util;
 
+import com.filenet.api.admin.ClassDefinition;
 import com.filenet.api.core.CustomObject;
 import org.apache.log4j.Logger;
 
@@ -54,6 +55,21 @@ public class P8Logger {
 
         } catch (Exception e) {
             logger.error("Error loggeando entidad: " + customObject, e);
+        }
+    }
+
+    public static void logClassProperties(Logger logger, ClassDefinition classDefinition, int count, int permissionsCount) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug(" Folder#: " + count);
+            logger.debug("        Id: " + classDefinition.get_Id().toString());
+            logger.debug("      Name: " + classDefinition.get_Name());
+            logger.debug("     Class: " + classDefinition.getClassName());
+            logger.debug("     Owner: " + classDefinition.get_Owner());
+            logger.debug("Permissions #: " + permissionsCount);
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + classDefinition, e);
         }
     }
     

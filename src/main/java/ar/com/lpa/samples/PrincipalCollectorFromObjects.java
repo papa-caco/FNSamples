@@ -3,6 +3,7 @@ package ar.com.lpa.samples;
 import java.util.Iterator;
 
 import ar.com.lpa.samples.util.*;
+import com.filenet.api.admin.ClassDefinition;
 import org.apache.log4j.Logger;
 
 import com.filenet.api.core.Document;
@@ -108,6 +109,37 @@ public class PrincipalCollectorFromObjects
             }
     }
 
+    public static void collectPrincipalsFromClasses(String osName, String classSearch) {
+        try{
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
+            if(!(independentObjectSet.isEmpty())){
+                int count=0;
+                @SuppressWarnings("rawtypes")
+                Iterator it=independentObjectSet.iterator();
+                while (true)
+                {
+                    if (it.hasNext()) {
+                        count++;
+                        ClassDefinition classDefinition = (ClassDefinition) it.next();
+                        String classOwner = classDefinition.get_Owner();
+                        currentPrincipals.addPrincipalFromObjectOwner(classOwner, p8realm);
+                        AccessPermissionList permissions = classDefinition.get_Permissions();
+                        P8Logger.logClassProperties(logger, classDefinition, count, permissions.size());
+                        if (!(permissions.isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(permissions, p8realm);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                logger.info("Total Class Definitions: " + count);
+            } else logger.info("No Class Definitions were found!");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
 	public static void main(String[] args)
 	{
 		String configPath = "config.properties";
@@ -122,9 +154,11 @@ public class PrincipalCollectorFromObjects
         String documentSearch = configLoader.getProperty("documentSearch");
         String folderSearch = configLoader.getProperty("folderSearch");
         String customObjectSearch = configLoader.getProperty("customObjectSearch");
+        String classSearch = configLoader.getProperty("classSearch");
 		collectPrincipalsFromDocuments(objectStore, documentSearch);
 		collectPrincipalsFromFolders(objectStore, folderSearch);
         collectPrincipalsFromCustomObjects(objectStore, customObjectSearch);
+        collectPrincipalsFromClasses(objectStore, classSearch);
 		//currentPrincipals.showCurrentPrincipals();
 		/*String jsonOutput = JsonExporter.exportToJson(currentPrincipals);
 		if (jsonOutput != null) {
