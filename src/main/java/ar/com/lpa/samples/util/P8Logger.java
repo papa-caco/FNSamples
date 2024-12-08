@@ -1,7 +1,10 @@
 package ar.com.lpa.samples.util;
 
+import com.filenet.api.admin.ChoiceList;
 import com.filenet.api.admin.ClassDefinition;
+import com.filenet.api.core.Annotation;
 import com.filenet.api.core.CustomObject;
+import com.filenet.api.events.Event;
 import org.apache.log4j.Logger;
 
 import com.filenet.api.core.Document;
@@ -70,6 +73,51 @@ public class P8Logger {
 
         } catch (Exception e) {
             logger.error("Error loggeando entidad: " + classDefinition, e);
+        }
+    }
+
+    public static void logAnnotationProperties(Logger logger, Annotation annotation, int count, int permissionsCount) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug(" Annotation#: " + count);
+            logger.debug("        Id: " + annotation.get_Id().toString());
+            logger.debug("      Name: " + annotation.get_Name());
+            logger.debug("     Class: " + annotation.getClassName());
+            logger.debug("     Owner: " + annotation.get_Owner());
+            logger.debug("Permissions #: " + permissionsCount);
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + annotation, e);
+        }
+    }
+
+    public static void logChoiceListProperties(Logger logger, ChoiceList choiceList, int count, int permissionsCount) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Choice List#: " + count);
+            logger.debug("         Id: " + choiceList.get_Id().toString());
+            logger.debug("       Name: " + choiceList.get_Name());
+            logger.debug("      Class: " + choiceList.getClassName());
+            logger.debug("      Owner: " + choiceList.get_Owner());
+            logger.debug("Permissions #: " + permissionsCount);
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + choiceList, e);
+        }
+    }
+
+    public static void logEventProperties(Logger logger, Event event, int count, int permissionsCount) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Event#: " + count);
+            logger.debug("         Id: " + event.get_Id().toString());
+            logger.debug("       Name: " + event.get_Name());
+            logger.debug("      Class: " + event.getClassName());
+            logger.debug("      Owner: " + event.get_Owner());
+            logger.debug("Permissions #: " + permissionsCount);
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + event, e);
         }
     }
     

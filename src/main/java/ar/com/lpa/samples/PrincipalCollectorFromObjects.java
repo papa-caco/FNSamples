@@ -3,7 +3,10 @@ package ar.com.lpa.samples;
 import java.util.Iterator;
 
 import ar.com.lpa.samples.util.*;
+import com.filenet.api.admin.ChoiceList;
 import com.filenet.api.admin.ClassDefinition;
+import com.filenet.api.core.Annotation;
+import com.filenet.api.events.Event;
 import org.apache.log4j.Logger;
 
 import com.filenet.api.core.Document;
@@ -140,6 +143,99 @@ public class PrincipalCollectorFromObjects
         }
     }
 
+    public static void collectPrincipalsFromAnnotations(String osName, String classSearch) {
+        try{
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
+            if(!(independentObjectSet.isEmpty())){
+                int count=0;
+                @SuppressWarnings("rawtypes")
+                Iterator it=independentObjectSet.iterator();
+                while (true)
+                {
+                    if (it.hasNext()) {
+                        count++;
+                        Annotation annotation = (Annotation) it.next();
+                        String classOwner = annotation.get_Owner();
+                        currentPrincipals.addPrincipalFromObjectOwner(classOwner, p8realm);
+                        AccessPermissionList permissions = annotation.get_Permissions();
+                        P8Logger.logAnnotationProperties(logger, annotation, count, permissions.size());
+                        if (!(permissions.isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(permissions, p8realm);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                logger.info("Total Annotations: " + count);
+            } else logger.info("No Annotations were found!");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void collectPrincipalsFromChoiceLists(String osName, String classSearch) {
+        try{
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
+            if(!(independentObjectSet.isEmpty())){
+                int count=0;
+                @SuppressWarnings("rawtypes")
+                Iterator it=independentObjectSet.iterator();
+                while (true)
+                {
+                    if (it.hasNext()) {
+                        count++;
+                        ChoiceList choiceList = (ChoiceList) it.next();
+                        String classOwner = choiceList.get_Owner();
+                        currentPrincipals.addPrincipalFromObjectOwner(classOwner, p8realm);
+                        AccessPermissionList permissions = choiceList.get_Permissions();
+                        P8Logger.logChoiceListProperties(logger, choiceList, count, permissions.size());
+                        if (!(permissions.isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(permissions, p8realm);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                logger.info("Total Choice Lists: " + count);
+            } else logger.info("No Choice Lists were found!");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void collectPrincipalsFromEvents(String osName, String classSearch) {
+        try{
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
+            if(!(independentObjectSet.isEmpty())){
+                int count=0;
+                @SuppressWarnings("rawtypes")
+                Iterator it=independentObjectSet.iterator();
+                while (true)
+                {
+                    if (it.hasNext()) {
+                        count++;
+                        Event event = (Event) it.next();
+                        String classOwner = event.get_Owner();
+                        currentPrincipals.addPrincipalFromObjectOwner(classOwner, p8realm);
+                        AccessPermissionList permissions = event.get_Permissions();
+                        P8Logger.logEventProperties(logger, event, count, permissions.size());
+                        if (!(permissions.isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(permissions, p8realm);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                logger.info("Total Events: " + count);
+            } else logger.info("No Events were found!");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
 	public static void main(String[] args)
 	{
 		String configPath = "config.properties";
@@ -155,10 +251,22 @@ public class PrincipalCollectorFromObjects
         String folderSearch = configLoader.getProperty("folderSearch");
         String customObjectSearch = configLoader.getProperty("customObjectSearch");
         String classSearch = configLoader.getProperty("classSearch");
-		collectPrincipalsFromDocuments(objectStore, documentSearch);
+        String annotationSearch = configLoader.getProperty("annotationSearch");
+        String choiceListSearch = configLoader.getProperty("choiceListSearch");
+        String eventSearch = configLoader.getProperty("eventSearch");
+        String dbPort = configLoader.getProperty("dbPort");
+        String dbHost = configLoader.getProperty("dbHost");
+        String databaseName = configLoader.getProperty("databaseName");
+        String schemaName = configLoader.getProperty("schemaName");
+        String dbUserName = configLoader.getProperty("dbUserName");
+        String dbUserPswd = configLoader.getProperty("dbUserPswd");
+		//collectPrincipalsFromDocuments(objectStore, documentSearch);
 		collectPrincipalsFromFolders(objectStore, folderSearch);
         collectPrincipalsFromCustomObjects(objectStore, customObjectSearch);
         collectPrincipalsFromClasses(objectStore, classSearch);
+        collectPrincipalsFromAnnotations(objectStore, annotationSearch);
+        collectPrincipalsFromChoiceLists(objectStore, choiceListSearch);
+        collectPrincipalsFromEvents(objectStore, eventSearch);
 		//currentPrincipals.showCurrentPrincipals();
 		/*String jsonOutput = JsonExporter.exportToJson(currentPrincipals);
 		if (jsonOutput != null) {
@@ -167,7 +275,7 @@ public class PrincipalCollectorFromObjects
 		String resultsPath = configLoader.getProperty("resultsPath");
 		logger.info("Total Principals: " + currentPrincipals.getPrincipals().size());
 		currentPrincipals.getPrincipals().sort(new PrincipalComparator());
-		JsonExporter.exportJsonToFile(currentPrincipals.getPrincipals(), resultsPath);
+		ResultExporter.exportPrincipalCollectionToJsonfile(currentPrincipals.getPrincipals(), resultsPath);
 		logger.info("Principal details at JSON file: " + resultsPath);
 	}
 }
