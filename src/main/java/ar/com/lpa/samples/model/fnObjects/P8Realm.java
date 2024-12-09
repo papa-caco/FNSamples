@@ -29,6 +29,7 @@ public class P8Realm {
 			this.setP8Domain();
 			if (realm == null) {
 				this.realm = this.p8domain.getEntireNetwork().get_MyRealm();
+				logger.info(String.format("P8 Domain: %s", p8domain.getDomain().get_Name()));
 				this.setUserGroupRepos();
 				logger.info(String.format("Found %s Users & %s Groups at domain: %s",
 						this.getRealmUsers().getRealmUsers().size(),

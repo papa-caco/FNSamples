@@ -2,9 +2,13 @@ package ar.com.lpa.samples.util;
 
 import com.filenet.api.admin.ChoiceList;
 import com.filenet.api.admin.ClassDefinition;
+import com.filenet.api.admin.StorageArea;
+import com.filenet.api.admin.StoragePolicy;
 import com.filenet.api.core.Annotation;
 import com.filenet.api.core.CustomObject;
 import com.filenet.api.events.Event;
+import com.filenet.api.security.SecurityPolicy;
+import com.filenet.api.security.SecurityTemplate;
 import org.apache.log4j.Logger;
 
 import com.filenet.api.core.Document;
@@ -64,7 +68,7 @@ public class P8Logger {
     public static void logClassProperties(Logger logger, ClassDefinition classDefinition, int count, int permissionsCount) {
         try {
             // Loggear los valores obtenidos
-            logger.debug(" Folder#: " + count);
+            logger.debug(" Class Definition#: " + count);
             logger.debug("        Id: " + classDefinition.get_Id().toString());
             logger.debug("      Name: " + classDefinition.get_Name());
             logger.debug("     Class: " + classDefinition.getClassName());
@@ -120,7 +124,67 @@ public class P8Logger {
             logger.error("Error loggeando entidad: " + event, e);
         }
     }
-    
+
+    public static void logStorageAreaProperties(Logger logger, StorageArea storageArea, int count, int permissionsCount) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Storage Area#: " + count);
+            logger.debug("         Id: " + storageArea.get_Id().toString());
+            logger.debug("       Name: " + storageArea.get_DisplayName());
+            logger.debug("      Class: " + storageArea.getClassName());
+            logger.debug("      Owner: " + storageArea.get_Owner());
+            logger.debug("Permissions #: " + permissionsCount);
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + storageArea, e);
+        }
+    }
+
+    public static void logStoragePolicyProperties(Logger logger, StoragePolicy storagePolicy, int count, int permissionsCount) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Storage Policy#: " + count);
+            logger.debug("         Id: " + storagePolicy.get_Id().toString());
+            logger.debug("       Name: " + storagePolicy.get_Name());
+            logger.debug("      Class: " + storagePolicy.getClassName());
+            logger.debug("      Owner: " + storagePolicy.get_Owner());
+            logger.debug("Permissions #: " + permissionsCount);
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + storagePolicy, e);
+        }
+    }
+
+    public static void logSecurityPolicyProperties(Logger logger, SecurityPolicy securityPolicy, int count, int permissionsCount, int securityTemplatesCount) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Security Policy#: " + count);
+            logger.debug("             Id: " + securityPolicy.get_Id().toString());
+            logger.debug("           Name: " + securityPolicy.get_Name());
+            logger.debug("          Class: " + securityPolicy.getClassName());
+            logger.debug("          Owner: " + securityPolicy.get_Owner());
+            logger.debug("  Permissions #: " + permissionsCount);
+            logger.debug("Sec Templates #: " + securityTemplatesCount);
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + securityPolicy, e);
+        }
+    }
+
+    public static void logSecurityTemplateProperties(Logger logger, SecurityTemplate securityTemplate, int count, int permissionsCount) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Storage Policy#: " + count);
+            logger.debug("         Id: " + securityTemplate.get_Id().toString());
+            logger.debug("       Name: " + securityTemplate.get_DisplayName());
+            logger.debug("      Class: " + securityTemplate.getClassName());
+            logger.debug("Permissions #: " + permissionsCount);
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + securityTemplate, e);
+        }
+    }
+
     public static void logPermisionValues(Logger logger, AccessPermission permission) 
     {
     	 try {

@@ -14,7 +14,6 @@ public class P8ObjectSearch {
         ObjectStore objStore = Factory.ObjectStore.fetchInstance(p8realm.getP8domain().getDomain(), osName,null);
         SearchScope searchScope = new SearchScope(objStore);
         SearchSQL searchSQL = new SearchSQL(sqlSearch);
-        logger.info("P8 Domain: " + p8realm.getP8domain().getDomain().get_Name() + " - Object Store: " + objStore.get_SymbolicName());
         logger.info("Object Search: "+ sqlSearch);
         return searchScope.fetchObjects(searchSQL, 10, null, Boolean.TRUE);
     }

@@ -20,7 +20,7 @@ public class SQLServerOperations {
     private static String dbUserName = null;
     private static String dbUserPswd = null;
 
-    public static void executeDatabaseOperations(Logger logger, String csvFilePath, String jsonFilePath) {
+    public static void retreiveSecurableObjects(Logger logger, String csvFilePath, String jsonFilePath) {
         String connectionString = "jdbc:sqlserver://" + dbHost + ":" + dbPort + ";databaseName="
                 + dbName + ";encrypt=false;user=" + dbUserName + ";password=" + dbUserPswd;
         Connection connection = null;
@@ -122,7 +122,7 @@ public class SQLServerOperations {
         String csvFilePath = "C:/Logs/results.csv";
         String jsonFilePath = "C:/Logs/results.json";
         Logger logger = Logger.getLogger(SQLServerOperations.class);
-        executeDatabaseOperations(logger, csvFilePath, jsonFilePath);
+        retreiveSecurableObjects(logger, csvFilePath, jsonFilePath);
     }
 
 }
