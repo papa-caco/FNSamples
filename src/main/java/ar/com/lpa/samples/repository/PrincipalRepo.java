@@ -6,14 +6,17 @@ import java.util.List;
 
 import ar.com.lpa.samples.model.Principal;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
+import ar.com.lpa.samples.util.P8Logger;
 import ar.com.lpa.samples.util.Utilities;
 import com.filenet.api.collection.AccessPermissionList;
 import com.filenet.api.security.AccessPermission;
 import lombok.Getter;
+import org.apache.log4j.Logger;
 
 @Getter
 public class PrincipalRepo {
 	private final List<Principal> principals = new ArrayList<>();
+	private static final Logger logger = Logger.getLogger(PrincipalRepo.class);
 
 	public void addPrincipalFromObjectOwner(String objectOwner, P8Realm p8realm){
 		if (objectOwner != null && objectOwner.startsWith("CN=")) {
@@ -42,7 +45,7 @@ public class PrincipalRepo {
 						this.addNewPrincipalFromDn(granteeName, principalType, p8realm);
 					}
 				}
-				//P8Logger.logPermisionValues(logger, permission);
+				P8Logger.logPermisionValues(logger, permission);
 			} while (it1.hasNext());
 		}
 	}
