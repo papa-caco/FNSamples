@@ -1,11 +1,7 @@
 package ar.com.lpa.samples.util;
 
-import com.filenet.api.admin.ChoiceList;
-import com.filenet.api.admin.ClassDefinition;
-import com.filenet.api.admin.StorageArea;
-import com.filenet.api.admin.StoragePolicy;
-import com.filenet.api.core.Annotation;
-import com.filenet.api.core.CustomObject;
+import com.filenet.api.admin.*;
+import com.filenet.api.core.*;
 import com.filenet.api.events.Event;
 import com.filenet.api.events.Subscription;
 import com.filenet.api.security.SecurityPolicy;
@@ -14,8 +10,6 @@ import com.filenet.api.sweep.CmSweep;
 import com.filenet.api.sweep.CmSweepPolicy;
 import org.apache.log4j.Logger;
 
-import com.filenet.api.core.Document;
-import com.filenet.api.core.Folder;
 import com.filenet.api.security.AccessPermission;
 
 import lombok.Getter;
@@ -71,12 +65,13 @@ public class P8Logger {
     public static void logClassProperties(Logger logger, ClassDefinition classDefinition, int count) {
         try {
             // Loggear los valores obtenidos
-            logger.debug(" Class Definition#: " + count);
-            logger.debug("        Id: " + classDefinition.get_Id().toString());
-            logger.debug("      Name: " + classDefinition.get_Name());
-            logger.debug("     Class: " + classDefinition.getClassName());
-            logger.debug("     Owner: " + classDefinition.get_Owner());
-            logger.debug("Permissions #: " + classDefinition.get_Permissions().size());
+            logger.debug("Class Definition#: " + count);
+            logger.debug("               Id: " + classDefinition.get_Id().toString());
+            logger.debug("             Name: " + classDefinition.get_Name());
+            logger.debug("            Class: " + classDefinition.getClassName());
+            logger.debug("            Owner: " + classDefinition.get_Owner());
+            logger.debug("    Permissions #: " + classDefinition.get_Permissions().size());
+            logger.debug("D I Permissions #: " + classDefinition.get_DefaultInstancePermissions().size());
 
         } catch (Exception e) {
             logger.error("Error loggeando entidad: " + classDefinition, e);
@@ -229,6 +224,36 @@ public class P8Logger {
 
         } catch (Exception e) {
             logger.error("Error loggeando entidad: " + sweepPolicy, e);
+        }
+    }
+
+    public static void logTableDefinitionProperties(Logger logger, TableDefinition tableDefinition, int count) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Table Definition#: " + count);
+            logger.debug("               Id: " + tableDefinition.get_Id().toString());
+            logger.debug("             Name: " + tableDefinition.get_Name());
+            logger.debug("            Class: " + tableDefinition.getClassName());
+            logger.debug("            Owner: " + tableDefinition.get_Owner());
+            logger.debug("    Permissions #: " + tableDefinition.get_Permissions().size());
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + tableDefinition, e);
+        }
+    }
+
+    public static void logAbstractPersistableProperties(Logger logger, CmAbstractPersistable abstractPersistable, int count) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug("Abstract Persistable#: " + count);
+            logger.debug("               Id: " + abstractPersistable.get_Id().toString());
+            logger.debug("             Name: " + abstractPersistable.get_Name());
+            logger.debug("            Class: " + abstractPersistable.getClassName());
+            logger.debug("            Owner: " + abstractPersistable.get_Owner());
+            logger.debug("    Permissions #: " + abstractPersistable.get_Permissions().size());
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + abstractPersistable, e);
         }
     }
 

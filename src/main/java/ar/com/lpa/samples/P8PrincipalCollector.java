@@ -2,10 +2,7 @@ package ar.com.lpa.samples;
 
 import java.util.Iterator;
 
-import com.filenet.api.admin.ChoiceList;
-import com.filenet.api.admin.ClassDefinition;
-import com.filenet.api.admin.StorageArea;
-import com.filenet.api.admin.StoragePolicy;
+import com.filenet.api.admin.*;
 import com.filenet.api.core.*;
 import com.filenet.api.events.Event;
 import com.filenet.api.events.Subscription;
@@ -15,15 +12,16 @@ import com.filenet.api.collection.IndependentObjectSet;
 
 import com.filenet.api.sweep.CmSweep;
 import com.filenet.api.sweep.CmSweepPolicy;
+import com.filenet.api.sweep.CmSweepRelationship;
 import org.apache.log4j.Logger;
 
 import ar.com.lpa.samples.util.*;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
 import ar.com.lpa.samples.repository.PrincipalRepo;
 
-public class PrincipalCollectorFromObjects
+public class P8PrincipalCollector
 {
-	private static final Logger logger = Logger.getLogger(PrincipalCollectorFromObjects.class);
+	private static final Logger logger = Logger.getLogger(P8PrincipalCollector.class);
     private static final P8Realm p8realm = new P8Realm();
     private static final PrincipalRepo currentPrincipals = new PrincipalRepo();
  
@@ -125,6 +123,8 @@ public class PrincipalCollectorFromObjects
                         P8Logger.logClassProperties(logger, classDefinition, count);
                         if (!(classDefinition.get_Permissions().isEmpty()))
                             currentPrincipals.addPrincipalsFromPermissions(classDefinition.get_Permissions(), p8realm);
+                        if (!(classDefinition.get_DefaultInstancePermissions().isEmpty()))
+                            currentPrincipals.addPrincipalsFromPermissions(classDefinition.get_DefaultInstancePermissions(), p8realm);
                     } while (it.hasNext());
                 }
                 logger.info("Total Class Definitions: " + count);
@@ -329,9 +329,9 @@ public class PrincipalCollectorFromObjects
                             currentPrincipals.addPrincipalsFromPermissions(subscription.get_Permissions(), p8realm);
                     } while (it.hasNext());
                 }
-                logger.info("Total Storage Areas: " + count);
+                logger.info("Total Subscriptions: " + count);
             }
-            else logger.info("No Storage Areas were found!");
+            else logger.info("No Subscriptions were found!");
         }
         catch(Exception e){
             e.printStackTrace();
@@ -366,8 +366,36 @@ public class PrincipalCollectorFromObjects
     }
 
     public static void collectPrincipalsFromSweepPolicies(String osName, String classSearch) {
+    try{
+        logger.info(String.format("Collecting Principals from Sweep Policies - Object Store: %s", osName));
+        IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
+        if(!(independentObjectSet.isEmpty())){
+            int count=0;
+            @SuppressWarnings("rawtypes")
+            Iterator it=independentObjectSet.iterator();
+            if (it.hasNext()) {
+                do {
+                    count++;
+                    CmSweepPolicy sweepPolicy = (CmSweepPolicy) it.next();
+                    currentPrincipals.addPrincipalFromObjectOwner(sweepPolicy.get_Owner(), p8realm);
+                    P8Logger.logSweepPolicyProperties(logger, sweepPolicy, count);
+                    if (!(sweepPolicy.get_Permissions().isEmpty())) {
+                        currentPrincipals.addPrincipalsFromPermissions(sweepPolicy.get_Permissions(), p8realm);
+                    }
+                } while (it.hasNext());
+            }
+            logger.info("Total Sweep Policies: " + count);
+        }
+            else logger.info("No Sweep Policies were found!");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void collectPrincipalsFromTabledefinitions(String osName, String classSearch) {
         try{
-            logger.info(String.format("Collecting Principals from Sweep Policies - Object Store: %s", osName));
+            logger.info(String.format("Collecting Principals from Table Definitions - Object Store: %s", osName));
             IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
             if(!(independentObjectSet.isEmpty())){
                 int count=0;
@@ -376,17 +404,45 @@ public class PrincipalCollectorFromObjects
                 if (it.hasNext()) {
                     do {
                         count++;
-                        CmSweepPolicy sweepPolicy = (CmSweepPolicy) it.next();
-                        currentPrincipals.addPrincipalFromObjectOwner(sweepPolicy.get_Owner(), p8realm);
-                        P8Logger.logSweepPolicyProperties(logger, sweepPolicy, count);
-                        if (!(sweepPolicy.get_Permissions().isEmpty())) {
-                            currentPrincipals.addPrincipalsFromPermissions(sweepPolicy.get_Permissions(), p8realm);
+                        TableDefinition tableDefinition = (TableDefinition) it.next();
+                        currentPrincipals.addPrincipalFromObjectOwner(tableDefinition.get_Owner(), p8realm);
+                        P8Logger.logTableDefinitionProperties(logger, tableDefinition, count);
+                        if (!(tableDefinition.get_Permissions().isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(tableDefinition.get_Permissions(), p8realm);
                         }
                     } while (it.hasNext());
                 }
-                logger.info("Total Sweep Policies: " + count);
+                logger.info("Total Table Definitions: " + count);
             }
-            else logger.info("No Sweep Policies were found!");
+            else logger.info("No Table Definitions were found!");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void collectPrincipalsFromAbstractsPersistable(String osName, String classSearch) {
+        try{
+            logger.info(String.format("Collecting Principals from Abstract Persistables - Object Store: %s", osName));
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
+            if(!(independentObjectSet.isEmpty())){
+                int count=0;
+                @SuppressWarnings("rawtypes")
+                Iterator it=independentObjectSet.iterator();
+                if (it.hasNext()) {
+                    do {
+                        count++;
+                        CmAbstractPersistable cmAbstractPersistable = (CmAbstractPersistable) it.next();
+                        currentPrincipals.addPrincipalFromObjectOwner(cmAbstractPersistable.get_Owner(), p8realm);
+                        P8Logger.logAbstractPersistableProperties(logger, cmAbstractPersistable, count);
+                        if (!(cmAbstractPersistable.get_Permissions().isEmpty())) {
+                            currentPrincipals.addPrincipalsFromPermissions(cmAbstractPersistable.get_Permissions(), p8realm);
+                        }
+                    } while (it.hasNext());
+                }
+                logger.info("Total Abstracts Persistable: " + count);
+            }
+            else logger.info("No Abstracts Persistable were found!");
         }
         catch(Exception e){
             e.printStackTrace();
@@ -399,9 +455,9 @@ public class PrincipalCollectorFromObjects
 		String configPath = "config.properties";
 		ConfigLoader configLoader = new ConfigLoader(configPath);
 		// Load attribute values from configuration file
-		PrincipalCollectorFromObjects.p8realm.setConnectionCeUri(configLoader.getProperty("ceURI"));
-		PrincipalCollectorFromObjects.p8realm.setConnectionUser(configLoader.getProperty("userName"));
-		PrincipalCollectorFromObjects.p8realm.setConnectionPswd(configLoader.getProperty("password"));
+		P8PrincipalCollector.p8realm.setConnectionCeUri(configLoader.getProperty("ceURI"));
+		P8PrincipalCollector.p8realm.setConnectionUser(configLoader.getProperty("userName"));
+		P8PrincipalCollector.p8realm.setConnectionPswd(configLoader.getProperty("password"));
         p8realm.setRealm(logger);
 		
 		String objectStore = configLoader.getProperty("objectStore");
@@ -418,6 +474,10 @@ public class PrincipalCollectorFromObjects
         String subscriptionSearch = configLoader.getProperty("subscriptionSearch");
         String sweepSearch = configLoader.getProperty("sweepSearch");
         String sweepPolicySearch = configLoader.getProperty("sweepPolicySearch");
+        String tableDefinitionSearch = configLoader.getProperty("tableDefinitionSearch");
+        String downloadRecordSearch = configLoader.getProperty("downloadRecordSearch");
+        String summaryDataSearch = configLoader.getProperty("summaryDataSearch");
+        String customRoleBaseSearch = configLoader.getProperty("customRoleBaseSearch");
 
         String dbPort = configLoader.getProperty("dbPort");
         String dbHost = configLoader.getProperty("dbHost");
@@ -425,8 +485,8 @@ public class PrincipalCollectorFromObjects
         String schemaName = configLoader.getProperty("schemaName");
         String dbUserName = configLoader.getProperty("dbUserName");
         String dbUserPswd = configLoader.getProperty("dbUserPswd");
-		collectPrincipalsFromDocuments(objectStore, documentSearch);
-		collectPrincipalsFromFolders(objectStore, folderSearch);
+		//collectPrincipalsFromDocuments(objectStore, documentSearch);
+		//collectPrincipalsFromFolders(objectStore, folderSearch);
         collectPrincipalsFromCustomObjects(objectStore, customObjectSearch);
         collectPrincipalsFromClassDefinitions(objectStore, classSearch);
         collectPrincipalsFromAnnotations(objectStore, annotationSearch);
@@ -434,10 +494,14 @@ public class PrincipalCollectorFromObjects
         collectPrincipalsFromEvents(objectStore, eventSearch);
         collectPrincipalsFromStoragePolicies(objectStore, storagePolicySearch);
         collectPrincipalsFromStorageAreas(objectStore, storageAreaSearch);
-        collectPrincipalsFromSecurityPolicies(objectStore, securityPolicySearch);
+        //collectPrincipalsFromSecurityPolicies(objectStore, securityPolicySearch);
         collectPrincipalsFromSubscriptions(objectStore, subscriptionSearch);
         collectPrincipalsFromSweeps(objectStore, sweepSearch);
         collectPrincipalsFromSweepPolicies(objectStore, sweepPolicySearch);
+        //collectPrincipalsFromTabledefinitions(objectStore,tableDefinitionSearch);
+        collectPrincipalsFromAbstractsPersistable(objectStore, downloadRecordSearch);
+        collectPrincipalsFromAbstractsPersistable(objectStore, summaryDataSearch);
+        collectPrincipalsFromAbstractsPersistable(objectStore, customRoleBaseSearch);
 
 		//currentPrincipals.showCurrentPrincipals();
 		/*String jsonOutput = JsonExporter.exportToJson(currentPrincipals);
