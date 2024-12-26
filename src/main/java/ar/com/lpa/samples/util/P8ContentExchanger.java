@@ -164,7 +164,9 @@ public class P8ContentExchanger {
             return ""; //Document Name already has an extension
         } else {
             switch (document.get_MimeType()) {
-                case "image/jpeg", "image/jpg" :
+                case "image/jpeg":
+                    return ".jpg";
+                case "image/jpg":
                     return ".jpg";
                 case "image/tiff":
                     return ".tif";
