@@ -1,7 +1,7 @@
 package ar.com.lpa.samples.util;
 
-import ar.com.lpa.samples.P8PrincipalCollector;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
+
 import com.filenet.api.collection.ContentElementList;
 import com.filenet.api.collection.FolderSet;
 import com.filenet.api.collection.IndependentObjectSet;
@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class P8ContentExchanger {
-    private static final Logger logger = Logger.getLogger(P8PrincipalCollector.class);
+    private static final Logger logger = Logger.getLogger(P8ContentExchanger.class);
     private static final P8Realm p8realm = new P8Realm();
 
     public static void documentContentExchange(String osName, String documentSearch, String filePath) {
@@ -43,7 +43,7 @@ public class P8ContentExchanger {
                         Document targetDoc = Factory.Document.createInstance(os, sourceDoc.getClassName());
                         setDocumentSystemProperties(sourceDoc,targetDoc);
                         setDocumentCustomProperties(sourceDoc,targetDoc);
-                        String fileName = filePath + sourceDoc.get_Name() + getContentFileExtension(sourceDoc);
+                        String fileName = filePath + sourceDoc.get_Id().toString() + getContentFileExtension(sourceDoc);
                         String mimeType = Files.probeContentType(new File(fileName).toPath());
                         targetDoc.set_MimeType(mimeType);
                         setContentElementsToDocument(targetDoc, fileName);
@@ -77,7 +77,7 @@ public class P8ContentExchanger {
         Iterator iter = docContentList.iterator();
         String fileName = null;
         try {
-            fileName = filePath + document.get_Name() + getContentFileExtension(document);
+            fileName = filePath + document.get_Id().toString() + getContentFileExtension(document);
             FileOutputStream fos = new FileOutputStream(fileName);
             while (iter.hasNext()) {
                 ContentTransfer ct = (ContentTransfer) iter.next();
