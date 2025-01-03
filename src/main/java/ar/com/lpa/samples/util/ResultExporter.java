@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+
+import ar.com.lpa.samples.model.FnDbTable;
+import ar.com.lpa.samples.repository.FnDbTableRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ar.com.lpa.samples.model.Principal;
 import org.json.JSONArray;
@@ -68,6 +71,20 @@ public class ResultExporter {
                 bufferedWriter.write(line);
                 bufferedWriter.newLine();
             }
+        }
+    }
+
+    public static void exportSelectToFnDbTables(ResultSet resultSet, FnDbTableRepo fnDbTableRepo) throws SQLException, IOException {
+        // Escribir filas
+        while (resultSet.next()) {
+            String tableName = resultSet.getString("table_name");
+            int rowCount = resultSet.getInt("row_count");
+            int securityIdCount = resultSet.getInt("security_id_count");
+            FnDbTable fnDbTable = new FnDbTable();
+            fnDbTable.setTableName(tableName);
+            fnDbTable.setRowCount(rowCount);
+            fnDbTable.setSecurityIdCount(securityIdCount);
+            fnDbTableRepo.getFnDbTables().add(fnDbTable);
         }
     }
 

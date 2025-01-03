@@ -2,12 +2,10 @@ package ar.com.lpa.samples.util;
 
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
 
-import com.filenet.api.collection.ContentElementList;
-import com.filenet.api.collection.FolderSet;
-import com.filenet.api.collection.IndependentObjectSet;
-import com.filenet.api.collection.PropertyDescriptionList;
+import com.filenet.api.collection.*;
 import com.filenet.api.constants.*;
 import com.filenet.api.core.*;
+import com.filenet.api.meta.ClassDescription;
 import com.filenet.api.meta.PropertyDescription;
 import com.filenet.api.property.Property;
 import com.filenet.api.util.Id;
@@ -127,34 +125,9 @@ public class P8ContentExchanger {
 
     }
 
-    public static void createP8DocumentInFolder(String osName, String docClass, String folderPath, String inputFilePath) throws FileNotFoundException, IOException {
-        ObjectStore os = Factory.ObjectStore.fetchInstance(p8realm.getP8domain().getDomain(), osName, null);
-        Folder folder = Factory.Folder.fetchInstance(os,folderPath,null);
-        InputStream inputStream = new FileInputStream(inputFilePath);
-        String mimeType = Files.probeContentType(new File(inputFilePath).toPath());
-        Document document = Factory.Document.createInstance(os, docClass);
-        Id id = new Id("{2389C5AD-F14A-C1AB-8536-93DFC0600006}");
-        document.getProperties().putValue("Id", id);
-        document.getProperties().putValue("DocumentTitle",getFileName(inputFilePath));
-        if (inputStream != null) {
-            ContentTransfer contentTransfer = Factory.ContentTransfer.createInstance();
-            contentTransfer.setCaptureSource(inputStream);
-            contentTransfer.set_RetrievalName(getFileName(inputFilePath));
-            ContentElementList contentElementList = Factory.ContentTransfer.createList();
-            contentElementList.add(contentTransfer);
-            document.set_ContentElements(contentElementList);
-            document.set_MimeType(mimeType);
-        }
-        //Check-in the doc
-        document.checkin(AutoClassify.DO_NOT_AUTO_CLASSIFY, CheckinType.MAJOR_VERSION);
-        //Get and put the doc properties
-        document.save(RefreshMode.REFRESH);
-        //Stores above document to the folder
-        ReferentialContainmentRelationship rc = folder.file(document, AutoUniqueName.AUTO_UNIQUE,getFileName(inputFilePath),
-                DefineSecurityParentage.DO_NOT_DEFINE_SECURITY_PARENTAGE);
-        rc.save(RefreshMode.REFRESH);
-        logger.info(String.format("Document created, Id: %s", document.get_Id().toString()));
-    }
+
+
+
 
     private static String getContentFileExtension(Document document) {
         String docName = document.get_Name();
@@ -255,6 +228,122 @@ public class P8ContentExchanger {
         return filePath.substring(lastSeparatorIndex + 1);
     }
 
+    public static void createP8DocumentInFolder(String osName, String docClass, String folderPath, String inputFilePath) throws FileNotFoundException, IOException {
+        ObjectStore os = Factory.ObjectStore.fetchInstance(p8realm.getP8domain().getDomain(), osName, null);
+        Folder folder = Factory.Folder.fetchInstance(os,folderPath,null);
+        InputStream inputStream = new FileInputStream(inputFilePath);
+        String mimeType = Files.probeContentType(new File(inputFilePath).toPath());
+        Document document = Factory.Document.createInstance(os, docClass);
+        Id id = new Id("{2389C5AD-F14A-C1AB-8536-93DFC0600017}");
+        document.getProperties().putValue("Id", id);
+        document.getProperties().putValue("DocumentTitle",getFileName(inputFilePath));
+        if (inputStream != null) {
+            ContentTransfer contentTransfer = Factory.ContentTransfer.createInstance();
+            contentTransfer.setCaptureSource(inputStream);
+            contentTransfer.set_RetrievalName(getFileName(inputFilePath));
+            ContentElementList contentElementList = Factory.ContentTransfer.createList();
+            contentElementList.add(contentTransfer);
+            document.set_ContentElements(contentElementList);
+            document.set_MimeType(mimeType);
+        }
+        //Check-in the doc
+        document.checkin(AutoClassify.DO_NOT_AUTO_CLASSIFY, CheckinType.MAJOR_VERSION);
+        //Get and put the doc properties
+        document.save(RefreshMode.REFRESH);
+        //Stores above document to the folder
+        ReferentialContainmentRelationship rc = folder.file(document, AutoUniqueName.AUTO_UNIQUE,getFileName(inputFilePath),
+                DefineSecurityParentage.DO_NOT_DEFINE_SECURITY_PARENTAGE);
+        rc.save(RefreshMode.REFRESH);
+        logger.info(String.format("Document created, Id: %s", document.get_Id().toString()));
+    }
+
+    public static void changeClassDocBSE(String osName, String documentSearch) {
+        try {
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm, logger, osName, documentSearch);
+            if (!(independentObjectSet.isEmpty())) {
+                int count1 = 0;
+                @SuppressWarnings("rawtypes")
+                Iterator it1 = independentObjectSet.iterator();
+                if (it1.hasNext()) {
+                    do {
+                        count1++;
+                        Document document = (Document) it1.next();
+                        String docClass = document.get_ClassDescription().get_SymbolicName();
+                        String superClass = document.get_ClassDescription().get_SuperclassDescription().get_SymbolicName();
+                        String newClass = document.getProperties().getStringValue("TipoDocumentoBSE");
+                        boolean validClass = (docClass.equals("DOCUMENTOBSE") || superClass.equals("DOCUMENTOBSE")) &&
+                                !(docClass.equals(newClass));
+                        boolean changeClass = document.getProperties().getBooleanValue("cambioClaseBSE");
+                        if (validClass && changeClass) {
+                            document.changeClass(newClass);
+                            document.getProperties().putValue("cambioClaseBSE",false);
+                            document.save(RefreshMode.REFRESH);
+                            logger.info(String.format("Document Id: %s changing document class - from %s to %s",
+                                    document.get_Id().toString(),
+                                    docClass, newClass));
+                        } else {
+                            logger.info(String.format("Document Id: %s - Class: %s does not apply to change class",
+                                    document.get_Id().toString(), document.getClassName()));
+
+                        }
+                    } while (it1.hasNext());
+                    logger.info("Total Documents: " + count1);
+                }
+            } else {
+                logger.info("No documents were found!");
+            }
+        } catch (Exception e) {
+            //e.printStackTrace();
+        }
+    }
+
+    public static void changeDocumentClass(String osName, String documentSearch, String newClass) {
+        try {
+            ObjectStore os = Factory.ObjectStore.fetchInstance(p8realm.getP8domain().getDomain(), osName, null);
+            ClassDescriptionSet classDescriptionSet = os.get_ClassDescriptions(); //1° Validate newClass exists
+            Iterator it = classDescriptionSet.iterator();
+            boolean existsClass = false;
+            while (it.hasNext()) {
+                ClassDescription classDescription = (ClassDescription) it.next();
+                if (classDescription.get_SymbolicName().equals(newClass)) {
+                    existsClass = true;
+                    IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm, logger, osName, documentSearch);
+                    if (!(independentObjectSet.isEmpty())) {
+                        int count1 = 0;
+                        @SuppressWarnings("rawtypes")
+                        Iterator it1 = independentObjectSet.iterator();
+                        if (it1.hasNext()) {
+                            do {
+                                count1++;
+                                Document document = (Document) it1.next();
+                                String docClass = document.getClassName();
+                                if (docClass.equals("Email")) {
+                                    document.changeClass(newClass);
+                                    document.save(RefreshMode.REFRESH);
+                                    logger.info(String.format("Document Id: %s changing document class - from %s to %s",
+                                            document.get_Id().toString(),
+                                            docClass, newClass));
+                                } else {
+                                    logger.info(String.format("Document Id: %s - Class: %s is not Document class",
+                                            document.get_Id().toString(),document.getClassName()));
+                                }
+                            } while (it.hasNext());
+                            logger.info("Total Documents: " + count1);
+                        }
+                    } else {
+                        logger.info("No documents were found!");
+                    }
+                }
+            }
+            if (!(existsClass)) {
+                logger.info(String.format("Class: %s  - does not exists in Object Store: %s", newClass, osName));
+            }
+        }
+        catch(Exception e){
+            //e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         String configPath = "config.properties";
         ConfigLoader configLoader = new ConfigLoader(configPath);
@@ -267,7 +356,11 @@ public class P8ContentExchanger {
         String objectStore = configLoader.getProperty("objectStore");
         String oneDocumentSearch = configLoader.getProperty("oneDocumentSearch");
         //createP8DocumentInFolder("TESTING","Document","/Carga","C:\\LOGS\\Module5.pdf");
-        documentContentExchange(objectStore,oneDocumentSearch,"C:\\LOGS\\");
-
+        /*changeDocumentClass("TESTING",
+          "Select * FROM Document where Id={2389C5AD-F14A-C1AB-8536-93DFC0600002}",
+          "FormData");*/
+        changeClassDocBSE("TESTING",
+                "Select * FROM Document where Id={727A6D0D-305F-C872-86FD-9398ECF00000}");
+        //documentContentExchange(objectStore,oneDocumentSearch,"C:\\LOGS\\");
     }
 }

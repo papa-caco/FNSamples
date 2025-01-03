@@ -1,4 +1,4 @@
-package ar.com.lpa.samples;
+package ar.com.lpa.samples.testing;
 
 import java.io.IOException;
 import java.util.Iterator;

@@ -1,5 +1,6 @@
 package ar.com.lpa.samples.util;
 
+import ar.com.lpa.samples.repository.FnDbTableRepo;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,14 +14,11 @@ import org.apache.log4j.Logger;
 @Setter
 public class SQLServerOperations {
 
-    private static String dbHost = null;
-    private static String dbPort = null;
-    private static String dbName = null;
-    private static String schemaName = null;
-    private static String dbUserName = null;
-    private static String dbUserPswd = null;
 
-    public static void retreiveSecurableObjects(Logger logger, String csvFilePath, String jsonFilePath) {
+    private static final FnDbTableRepo fnDbTableRepo = new FnDbTableRepo();
+    private static final Logger logger = Logger.getLogger(SQLServerOperations.class);
+
+    public static void retreiveSecurableObjects(String dbHost, String dbPort, String dbName, String dbUserName, String dbUserPswd, String schemaName, String csvFilePath) {
         String connectionString = "jdbc:sqlserver://" + dbHost + ":" + dbPort + ";databaseName="
                 + dbName + ";encrypt=false;user=" + dbUserName + ";password=" + dbUserPswd;
         Connection connection = null;
@@ -28,39 +26,39 @@ public class SQLServerOperations {
         try {
             // Conexión a la base de datos
             connection = DriverManager.getConnection(connectionString);
-            logger.info(String.format("Conexión exitosa a la base  SQL Server %s.", dbName));
+            logger.info(String.format("Successfully connected to database %s.", dbName));
             // Paso 1: Crear la tabla temporal
-            createTemporaryTable(connection, logger);
+            createTemporaryTable(connection);
             // Paso 2: Ejecutar el cursor
-            executeCursor(connection, logger);
-            // Paso 3: Consultar la tabla temporal y mostrar resultados
-            queryTemporaryTableToCsv(connection, csvFilePath, logger);
-            queryTemporaryTableToJson(connection, jsonFilePath, logger);
+            executeCursor(connection, schemaName);
+            // Paso 3: Consultar la tabla temporal y guardar resultados
+            queryTemporaryTableToCsv(connection, csvFilePath);
+            queryTempToFnDbTableRepo(connection);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         } finally {
             if (connection != null) {
                 try {
                     connection.close();
-                    logger.info("Conexión cerrada.");
+                    logger.info("Connection closed.");
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
             }
         }
     }
 
-    private static void createTemporaryTable(Connection connection, Logger logger) throws Exception {
+    private static void createTemporaryTable(Connection connection) throws Exception {
         String createTableSQL = "IF OBJECT_ID('tempdb..#TablesResults') IS NOT NULL DROP TABLE #TablesResults;\n" +
                                 "CREATE TABLE #TablesResults (table_name NVARCHAR(128), row_count INT, security_id_count INT);";
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTableSQL);
-            logger.info("Tabla temporal creada.");
+            logger.info("Temporary table created.");
         }
     }
 
-    private static void executeCursor(Connection connection, Logger logger) throws Exception {
+    private static void executeCursor(Connection connection, String schemaName) throws Exception {
         String cursorSQL = "DECLARE @sql NVARCHAR(MAX);\n" +
                            "DECLARE @tableName NVARCHAR(128);\n" +
                            "DECLARE table_cursor CURSOR FOR\n" +
@@ -87,17 +85,19 @@ public class SQLServerOperations {
                            "            DELETE FROM #TablesResults WHERE security_id_count = 0;";
                 try (Statement stmt = connection.createStatement()) {
             stmt.execute(cursorSQL);
-            logger.info("Cursor ejecutado con éxito.");
+            logger.info("Cursor executed.");
         }
     }
 
-    private static void queryTemporaryTableToCsv(Connection connection, String resultsFilePath, Logger logger) throws Exception {
-        String querySQL = "SELECT * FROM #TablesResults ORDER BY table_name;";
+    private static void queryTemporaryTableToCsv(Connection connection, String resultsFilePath) throws Exception {
+        if (resultsFilePath != null) {
+            String querySQL = "SELECT * FROM #TablesResults ORDER BY table_name;";
 
-        try (Statement stmt = connection.createStatement();
-             ResultSet resultSet = stmt.executeQuery(querySQL)) {
-            ResultExporter.exportSelectFromTableToCsv(resultSet, resultsFilePath);
-            logger.info(String.format("Exporting results from temporary table to %s", resultsFilePath));
+            try (Statement stmt = connection.createStatement();
+                 ResultSet resultSet = stmt.executeQuery(querySQL)) {
+                ResultExporter.exportSelectFromTableToCsv(resultSet, resultsFilePath);
+                logger.info(String.format("Exporting results from temporary table to %s", resultsFilePath));
+            }
         }
     }
 
@@ -111,18 +111,20 @@ public class SQLServerOperations {
         }
     }
 
+    private static void queryTempToFnDbTableRepo(Connection connection) throws Exception {
+        String querySQL = "SELECT * FROM #TablesResults ORDER BY table_name;";
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet resultSet = stmt.executeQuery(querySQL)) {
+            ResultExporter.exportSelectToFnDbTables(resultSet, fnDbTableRepo);
+            logger.info(String.format("Exporting results from temporary table to FnDbTableRepo - # Records: %d",fnDbTableRepo.getFnDbTables().size()));
+        }
+    }
+
     // Ejemplo de uso
     public static void main(String[] args) {
-        dbPort = "1433";
-        dbHost = "172.16.16.97";
-        dbName = "OBJST1";
-        schemaName = "dbo";
-        dbUserName = "sa";
-        dbUserPswd = "Lpa1234$";
-        String csvFilePath = "C:/Logs/results.csv";
-        String jsonFilePath = "C:/Logs/results.json";
-        Logger logger = Logger.getLogger(SQLServerOperations.class);
-        retreiveSecurableObjects(logger, csvFilePath, jsonFilePath);
+        retreiveSecurableObjects("172.16.16.113","1433","testing",
+                "sa","Lpa23291","dbo",null);
     }
 
 }
