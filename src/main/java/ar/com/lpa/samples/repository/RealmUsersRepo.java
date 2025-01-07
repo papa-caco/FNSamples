@@ -3,7 +3,9 @@ package ar.com.lpa.samples.repository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
+import ar.com.lpa.samples.model.LdapUser;
 import com.filenet.api.collection.UserSet;
 import com.filenet.api.constants.PrincipalSearchAttribute;
 import com.filenet.api.constants.PrincipalSearchSortType;
@@ -15,12 +17,12 @@ import ar.com.lpa.samples.util.Utilities;
 import lombok.Getter;
 import lombok.Setter;
 
+@Getter
+@Setter
 public class RealmUsersRepo {
-	
-	@Getter
-	@Setter
+
 	private Realm realm;
-	private Collection<User> realmUsers = new ArrayList<>();
+	private final List<LdapUser> realmUsers = new ArrayList<>();
 	
     public void setRealmUsers()
     {
@@ -33,23 +35,18 @@ public class RealmUsersRepo {
         	realmUsers.addAll(getUsersCollectionByPattern(c));
         } 	
     }
-    
-    public Collection<User> getRealmUsers()
+
+	private Collection<LdapUser> getUsersCollectionByPattern(char initial)
     {
-    	return this.realmUsers;
-    }
-    
-    private Collection<User> getUsersCollectionByPattern(char initial) 
-    {
-        Collection<User> usersCollection = new ArrayList<>();
+        Collection<LdapUser> usersCollection = new ArrayList<>();
         String pattern = String.valueOf(initial);
         UserSet userSet = this.realm.findUsers(pattern, PrincipalSearchType.PREFIX_MATCH,PrincipalSearchAttribute.SHORT_NAME,PrincipalSearchSortType.NONE,Integer.valueOf("50"), null);    
         // Iteramos sobre los elementos del UserSet y los agregamos
-    	@SuppressWarnings("unchecked")
-		Iterator<User> it = userSet.iterator();
+    	Iterator<User> it = userSet.iterator();
     	while (it.hasNext()) {
     		User user = (User)it.next();
-    		usersCollection.add(user);
+			LdapUser ldapUser = LdapUser.instanceFromUser(user);
+    		usersCollection.add(ldapUser);
     	}
     	//System.out.println(String.valueOf(usersCollection.size()) + " users with \"" + pattern + "\"");
         return usersCollection;
@@ -58,11 +55,11 @@ public class RealmUsersRepo {
     public String getUserSidFromDn(String dN)
     {
     	String userSiD = null;
-    	for (User user : this.realmUsers)
+    	for (LdapUser ldapUser : this.realmUsers)
     	{
-    		if (user.get_DistinguishedName().equals(dN))
+    		if (ldapUser.getDistinguishedName().equals(dN))
     		{
-    			userSiD = user.get_Id();
+    			userSiD = ldapUser.getUserId();
     			break;
     		}
     	}
@@ -72,11 +69,11 @@ public class RealmUsersRepo {
     public String getUserSidFromShortName(String shortName)
     {
     	String userSiD = null;
-    	for (User user : this.realmUsers)
+    	for (LdapUser ldapUser : this.realmUsers)
     	{
-    		if (user.get_ShortName().equals(shortName))
+    		if (ldapUser.getShortName().equals(shortName))
     		{
-    			userSiD = user.get_Id();
+    			userSiD = ldapUser.getUserId();
     			break;
     		}
     	}
@@ -86,11 +83,11 @@ public class RealmUsersRepo {
     public String getUserDnFromShortName(String shortName)
     {
     	String dN = null;
-    	for (User user : this.realmUsers)
+    	for (LdapUser ldapUser : this.realmUsers)
     	{
-    		if (user.get_ShortName().equals(shortName))
+    		if (ldapUser.getShortName().equals(shortName))
     		{
-    			dN = user.get_DistinguishedName();
+    			dN = ldapUser.getDistinguishedName();
     			break;
     		}
     	}
@@ -101,11 +98,11 @@ public class RealmUsersRepo {
     {
     	String userShortName = null;
     	String name = Utilities.extractShortName(uPN);
-    	for (User user : this.realmUsers)
+    	for (LdapUser ldapUser : this.realmUsers)
     	{
-    		if (user.get_ShortName().equals(name))
+    		if (ldapUser.getShortName().equals(name))
     		{
-    			userShortName = user.get_ShortName();
+    			userShortName = ldapUser.getShortName();
     			break;
     		}
     	}
@@ -115,11 +112,11 @@ public class RealmUsersRepo {
     public String getUserShortNameFromDn(String dN)
     {
     	String userShortName = null;
-    	for (User user : this.realmUsers)
+    	for (LdapUser ldapUser : this.realmUsers)
     	{
-    		if (user.get_DistinguishedName().equals(dN))
+    		if (ldapUser.getDistinguishedName().equals(dN))
     		{
-    			userShortName = user.get_ShortName();
+    			userShortName = ldapUser.getShortName();
     			break;
     		}
     	}

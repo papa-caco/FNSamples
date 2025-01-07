@@ -7,11 +7,17 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 import ar.com.lpa.samples.model.FnDbTable;
+import ar.com.lpa.samples.model.LdapGroup;
+import ar.com.lpa.samples.model.LdapUser;
 import ar.com.lpa.samples.repository.FnDbTableRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ar.com.lpa.samples.model.Principal;
+import com.filenet.api.security.Group;
+import com.filenet.api.security.User;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -85,6 +91,36 @@ public class ResultExporter {
             fnDbTable.setRowCount(rowCount);
             fnDbTable.setSecurityIdCount(securityIdCount);
             fnDbTableRepo.getFnDbTables().add(fnDbTable);
+        }
+    }
+
+    public static String expPrincipalsToJsonOnConsole(Collection<Principal> collection) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(collection);
+        } catch (Exception e) {
+            //e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String expUsersToJsonOnConsole(List<LdapUser> collection) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(collection);
+        } catch (Exception e) {
+            //e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String expGroupsToJsonOnConsole(Collection<LdapGroup> collection) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(collection);
+        } catch (Exception e) {
+            //e.printStackTrace();
+            return null;
         }
     }
 

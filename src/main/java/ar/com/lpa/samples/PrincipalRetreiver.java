@@ -49,7 +49,14 @@ public class PrincipalRetreiver {
         String summaryDataSearch = configLoader.getProperty("summaryDataSearch");
         String customRoleBaseSearch = configLoader.getProperty("customRoleBaseSearch");
 
-
+        /*String usersJson = ResultExporter.expUsersToJsonOnConsole(p8realm.getRealmUsers().getRealmUsers());
+        if (usersJson != null) {
+            System.out.println(usersJson);
+       }
+        String groupsJson = ResultExporter.expGroupsToJsonOnConsole(p8realm.getRealmGroups().getRealmGroups());
+        if (groupsJson != null) {
+            System.out.println(groupsJson);
+        }*/
 
         P8PrincipalCollector.collectPrincipalsFromDocuments(currentPrincipals, p8realm, objectStore, documentSearch);
         P8PrincipalCollector.collectPrincipalsFromFolders(currentPrincipals, p8realm, objectStore, folderSearch);
@@ -69,11 +76,12 @@ public class PrincipalRetreiver {
         P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, summaryDataSearch);
         P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, customRoleBaseSearch);
 
-        currentPrincipals.showCurrentPrincipals();
-		String jsonOutput = JsonExporter.exportToJson(currentPrincipals);
-		if (jsonOutput != null) {
-		    System.out.println(jsonOutput);
-		}
+
+        /*String principalsJson = ResultExporter.exportPrincipalCollectionToJson(currentPrincipals.getPrincipals());
+        if (principalsJson != null) {
+            System.out.println(principalsJson);
+        }*/
+
         String resultsPath = configLoader.getProperty("resultsPath");
         logger.info("Total Principals: " + currentPrincipals.getPrincipals().size());
         currentPrincipals.getPrincipals().sort(new PrincipalComparator());
