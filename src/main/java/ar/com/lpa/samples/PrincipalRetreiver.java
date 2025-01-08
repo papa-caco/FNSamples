@@ -8,13 +8,14 @@ import ar.com.lpa.samples.util.PrincipalComparator;
 import ar.com.lpa.samples.util.ResultExporter;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+
 public class PrincipalRetreiver {
     private static final Logger logger = Logger.getLogger(PrincipalRetreiver.class);
     private static final P8Realm p8realm = new P8Realm();
     private static final PrincipalRepo currentPrincipals = new PrincipalRepo();
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) throws IOException {
         String configPath = "config.properties";
         ConfigLoader configLoader = new ConfigLoader(configPath);
         // Load attribute values from configuration file
@@ -49,14 +50,17 @@ public class PrincipalRetreiver {
         String summaryDataSearch = configLoader.getProperty("summaryDataSearch");
         String customRoleBaseSearch = configLoader.getProperty("customRoleBaseSearch");
 
-        /*String usersJson = ResultExporter.expUsersToJsonOnConsole(p8realm.getRealmUsers().getRealmUsers());
+        String usersJson = ResultExporter.expUsersToJsonOnConsole(p8realm.getRealmUsers().getLdapUsers());
         if (usersJson != null) {
             System.out.println(usersJson);
-       }
-        String groupsJson = ResultExporter.expGroupsToJsonOnConsole(p8realm.getRealmGroups().getRealmGroups());
+        }
+        ResultExporter.exportLdapUsersToCsv(p8realm.getRealmUsers().getLdapUsers(), "C:\\Logs\\LdapUsers.csv");
+
+        String groupsJson = ResultExporter.expGroupsToJsonOnConsole(p8realm.getRealmGroups().getLdapGroups());
         if (groupsJson != null) {
             System.out.println(groupsJson);
-        }*/
+        }
+        ResultExporter.exportLdapGroupsToCsv(p8realm.getRealmGroups().getLdapGroups(),"C:\\Logs\\LdapGroups.csv" );
 
         P8PrincipalCollector.collectPrincipalsFromDocuments(currentPrincipals, p8realm, objectStore, documentSearch);
         P8PrincipalCollector.collectPrincipalsFromFolders(currentPrincipals, p8realm, objectStore, folderSearch);
@@ -77,10 +81,10 @@ public class PrincipalRetreiver {
         P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, customRoleBaseSearch);
 
 
-        /*String principalsJson = ResultExporter.exportPrincipalCollectionToJson(currentPrincipals.getPrincipals());
+        String principalsJson = ResultExporter.exportPrincipalCollectionToJsonOnConsole(currentPrincipals.getPrincipals());
         if (principalsJson != null) {
             System.out.println(principalsJson);
-        }*/
+        }
 
         String resultsPath = configLoader.getProperty("resultsPath");
         logger.info("Total Principals: " + currentPrincipals.getPrincipals().size());

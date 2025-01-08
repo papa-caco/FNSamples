@@ -19,28 +19,27 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RealmGroupsRepo {
+public class LdapGroupsRepo {
 
-	private Realm realm;
-	private final Collection<LdapGroup> realmGroups = new ArrayList<>();
+	private final Collection<LdapGroup> ldapGroups = new ArrayList<>();
 	
-    public void setRealmGroups()
+    public void setLdapGroups(Realm realm)
     {
     	for (char c = 'A'; c <= 'Z'; c++) 
         {
-    		realmGroups.addAll(getGroupsCollectionByPattern(c));
+    		ldapGroups.addAll(getGroupsCollectionByPattern(c, realm));
         }    
         for (char c = '0'; c <= '9'; c++) 
         {
-        	realmGroups.addAll(getGroupsCollectionByPattern(c));
+        	ldapGroups.addAll(getGroupsCollectionByPattern(c, realm));
         } 	
     }
 
-	private Collection<LdapGroup> getGroupsCollectionByPattern(char initial)
+	private Collection<LdapGroup> getGroupsCollectionByPattern(char initial, Realm realm)
     {
         Collection<LdapGroup> GroupsCollection = new ArrayList<>();
         String pattern = String.valueOf(initial);
-        GroupSet GroupSet = this.realm.findGroups(pattern, PrincipalSearchType.PREFIX_MATCH,PrincipalSearchAttribute.SHORT_NAME,PrincipalSearchSortType.NONE,Integer.valueOf("50"), null);    
+        GroupSet GroupSet = realm.findGroups(pattern, PrincipalSearchType.PREFIX_MATCH,PrincipalSearchAttribute.SHORT_NAME,PrincipalSearchSortType.NONE,Integer.valueOf("50"), null);
         // Iteramos sobre los elementos del GroupSet y los agregamos
 		Iterator<Group> it = GroupSet.iterator();
     	while (it.hasNext()) {
@@ -55,11 +54,11 @@ public class RealmGroupsRepo {
     public String getGroupSidFromDn(String dN)
     {
     	String groupSiD = null;
-    	for (LdapGroup ldapGroup : this.realmGroups)
+    	for (LdapGroup ldapGroup : this.ldapGroups)
     	{
     		if (ldapGroup.getDistinguishedName().equals(dN))
     		{
-    			groupSiD = ldapGroup.getGroupId();
+    			groupSiD = ldapGroup.getGroupSID();
     			break;
     		}
     	}
@@ -69,11 +68,11 @@ public class RealmGroupsRepo {
     public String getGroupSidFromShortName(String shortName)
     {
     	String groupSid = null;
-    	for (LdapGroup ldapGroup : this.realmGroups)
+    	for (LdapGroup ldapGroup : this.ldapGroups)
     	{
     		if (ldapGroup.getShortName().equals(shortName))
     		{
-    			groupSid = ldapGroup.getGroupId();
+    			groupSid = ldapGroup.getGroupSID();
     			break;
     		}
     	}
@@ -83,7 +82,7 @@ public class RealmGroupsRepo {
     public String getGroupDnFromShortName(String shortName)
     {
     	String dN = null;
-    	for (LdapGroup ldapGroup : this.realmGroups)
+    	for (LdapGroup ldapGroup : this.ldapGroups)
     	{
     		if (ldapGroup.getShortName().equals(shortName))
     		{
@@ -98,7 +97,7 @@ public class RealmGroupsRepo {
     {
     	String groupShortName = null;
     	String name = Utilities.extractShortName(uPN);
-    	for (LdapGroup ldapGroup : this.realmGroups)
+    	for (LdapGroup ldapGroup : this.ldapGroups)
     	{
     		if (ldapGroup.getShortName().equals(name))
     		{
@@ -112,7 +111,7 @@ public class RealmGroupsRepo {
     public String getGroupShortNameFromDn(String dN)
     {
     	String groupShortName = null;
-    	for (LdapGroup ldapGroup : this.realmGroups)
+    	for (LdapGroup ldapGroup : this.ldapGroups)
     	{
     		if (ldapGroup.getDistinguishedName().equals(dN))
     		{

@@ -19,28 +19,27 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RealmUsersRepo {
+public class LdapUsersRepo {
 
-	private Realm realm;
-	private final List<LdapUser> realmUsers = new ArrayList<>();
+	private final List<LdapUser> ldapUsers = new ArrayList<>();
 	
-    public void setRealmUsers()
+    public void setLdapUsers(Realm realm)
     {
     	for (char c = 'A'; c <= 'Z'; c++) 
         {
-    		realmUsers.addAll(getUsersCollectionByPattern(c));
+    		ldapUsers.addAll(getUsersCollectionByPattern(c, realm));
         }    
         for (char c = '0'; c <= '9'; c++) 
         {
-        	realmUsers.addAll(getUsersCollectionByPattern(c));
+        	ldapUsers.addAll(getUsersCollectionByPattern(c, realm));
         } 	
     }
 
-	private Collection<LdapUser> getUsersCollectionByPattern(char initial)
+	private Collection<LdapUser> getUsersCollectionByPattern(char initial, Realm realm)
     {
         Collection<LdapUser> usersCollection = new ArrayList<>();
         String pattern = String.valueOf(initial);
-        UserSet userSet = this.realm.findUsers(pattern, PrincipalSearchType.PREFIX_MATCH,PrincipalSearchAttribute.SHORT_NAME,PrincipalSearchSortType.NONE,Integer.valueOf("50"), null);    
+        UserSet userSet = realm.findUsers(pattern, PrincipalSearchType.PREFIX_MATCH,PrincipalSearchAttribute.SHORT_NAME,PrincipalSearchSortType.NONE,Integer.valueOf("50"), null);
         // Iteramos sobre los elementos del UserSet y los agregamos
     	Iterator<User> it = userSet.iterator();
     	while (it.hasNext()) {
@@ -55,11 +54,11 @@ public class RealmUsersRepo {
     public String getUserSidFromDn(String dN)
     {
     	String userSiD = null;
-    	for (LdapUser ldapUser : this.realmUsers)
+    	for (LdapUser ldapUser : this.ldapUsers)
     	{
     		if (ldapUser.getDistinguishedName().equals(dN))
     		{
-    			userSiD = ldapUser.getUserId();
+    			userSiD = ldapUser.getUserSID();
     			break;
     		}
     	}
@@ -69,11 +68,11 @@ public class RealmUsersRepo {
     public String getUserSidFromShortName(String shortName)
     {
     	String userSiD = null;
-    	for (LdapUser ldapUser : this.realmUsers)
+    	for (LdapUser ldapUser : this.ldapUsers)
     	{
     		if (ldapUser.getShortName().equals(shortName))
     		{
-    			userSiD = ldapUser.getUserId();
+    			userSiD = ldapUser.getUserSID();
     			break;
     		}
     	}
@@ -83,7 +82,7 @@ public class RealmUsersRepo {
     public String getUserDnFromShortName(String shortName)
     {
     	String dN = null;
-    	for (LdapUser ldapUser : this.realmUsers)
+    	for (LdapUser ldapUser : this.ldapUsers)
     	{
     		if (ldapUser.getShortName().equals(shortName))
     		{
@@ -98,7 +97,7 @@ public class RealmUsersRepo {
     {
     	String userShortName = null;
     	String name = Utilities.extractShortName(uPN);
-    	for (LdapUser ldapUser : this.realmUsers)
+    	for (LdapUser ldapUser : this.ldapUsers)
     	{
     		if (ldapUser.getShortName().equals(name))
     		{
@@ -112,7 +111,7 @@ public class RealmUsersRepo {
     public String getUserShortNameFromDn(String dN)
     {
     	String userShortName = null;
-    	for (LdapUser ldapUser : this.realmUsers)
+    	for (LdapUser ldapUser : this.ldapUsers)
     	{
     		if (ldapUser.getDistinguishedName().equals(dN))
     		{

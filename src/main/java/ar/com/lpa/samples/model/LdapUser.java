@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class LdapUser {
-    private String userId;
+    private String userSID;
     private String name;
     private String distinguishedName;
     private String shortName;
@@ -22,7 +22,7 @@ public class LdapUser {
 
     public static LdapUser instanceFromUser(User user) {
         LdapUser ldapUser = new LdapUser();
-        ldapUser.setUserId(user.get_Id());
+        ldapUser.setUserSID(user.get_Id());
         ldapUser.setName(user.get_Name());
         ldapUser.setDistinguishedName(user.get_DistinguishedName());
         ldapUser.setShortName(user.get_ShortName());

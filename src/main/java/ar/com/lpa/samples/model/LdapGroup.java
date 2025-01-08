@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Setter
 @NoArgsConstructor
 public class LdapGroup {
-    private String groupId;
+    private String groupSID;
     private String name;
     private String distinguishedName;
     private String shortName;
@@ -26,7 +26,7 @@ public class LdapGroup {
 
     public static LdapGroup instanceFromGroup(Group group){
         LdapGroup ldapGroup = new LdapGroup();
-        ldapGroup.setGroupId(group.get_Id());
+        ldapGroup.setGroupSID(group.get_Id());
         ldapGroup.setName(group.get_Name());
         ldapGroup.setDistinguishedName(group.get_DistinguishedName());
         ldapGroup.setShortName(group.get_ShortName());
