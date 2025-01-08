@@ -15,11 +15,13 @@ import ar.com.lpa.samples.model.LdapUser;
 import ar.com.lpa.samples.repository.FnDbTableRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ar.com.lpa.samples.model.Principal;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 
 public class ResultExporter {
+    private static final Logger logger = Logger.getLogger(ResultExporter.class);
 	
     public static String exportPrincipalCollectionToJsonOnConsole(Collection<Principal> principals) {
         try {
@@ -38,42 +40,44 @@ public class ResultExporter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        logger.info(String.format("Exported %d Principals to %s", principals.size(), filePath));
     }
 
-    public static void exportSelectFromTableToJson(ResultSet resultSet, String filePath) throws SQLException, IOException {
+    public static void exportSelectFromTableToJsonFile(ResultSet resultSet, String filePath) throws SQLException, IOException {
         JSONArray jsonArray = new JSONArray();
-
+        int count = 0;
         while (resultSet.next()) {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("table_name", resultSet.getString("table_name"));
             jsonObject.put("row_count", resultSet.getInt("row_count"));
             jsonObject.put("security_id_count", resultSet.getInt("security_id_count"));
             jsonArray.put(jsonObject);
+            count++;
         }
-
         try (FileWriter fileWriter = new FileWriter(filePath)) {
             fileWriter.write(jsonArray.toString(4)); // Formatea con indentación de 4 espacios
+            logger.info(String.format("Exported %d Rows to %s", count, filePath));
         }
     }
 
     public static void exportSelectFromTableToCsv(ResultSet resultSet, String filePath) throws SQLException, IOException {
         try (FileWriter fileWriter = new FileWriter(filePath);
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
-
+            int count = 0;
             // Escribir encabezados
             bufferedWriter.write("\"table_name\"|\"row_count\"|\"security_id_count\"");
             bufferedWriter.newLine();
-
             // Escribir filas
             while (resultSet.next()) {
                 String tableName = resultSet.getString("table_name");
                 int rowCount = resultSet.getInt("row_count");
                 int securityIdCount = resultSet.getInt("security_id_count");
-
                 String line = String.format("\"%s\"|\"%d\"|\"%d\"", tableName, rowCount, securityIdCount);
                 bufferedWriter.write(line);
                 bufferedWriter.newLine();
+                count++;
             }
+            logger.info(String.format("Exported %d Rows to %s", count, filePath));
         }
     }
 
@@ -129,6 +133,7 @@ public class ResultExporter {
                 bufferedWriter.write(line);
                 bufferedWriter.newLine();
             }
+            logger.info(String.format("Exported %d LDAP Users to %s", ldapUsers.size(), filePath));
         }
     }
 
@@ -149,6 +154,27 @@ public class ResultExporter {
                 bufferedWriter.write(line);
                 bufferedWriter.newLine();
             }
+            logger.info(String.format("Exported %d LDAP Groups to %s", ldapGroups.size(), filePath));
+        }
+    }
+
+    public static void exportPrincipalsToCsv(Collection<Principal> principals, String filePath) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(filePath);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            // Escribir encabezados
+            bufferedWriter.write("\"sId\"|\"type\"|\"distinguishedName\"|\"samAccountName\"");
+            bufferedWriter.newLine();
+            // Escribir filas
+            for (Principal principal : principals) {
+                String sId = principal.getSId();
+                String type = principal.getPrincipalType().toString();
+                String distiguishedName = principal.getDistinguishedName();
+                String samAccountName = principal.getSamAccountName();
+                String line = String.format("\"%s\"|\"%s\"|\"%s\"|\"%s\"", sId, type ,distiguishedName, samAccountName);
+                bufferedWriter.write(line);
+                bufferedWriter.newLine();
+            }
+            logger.info(String.format("Exported %d Principals to %s", principals.size(), filePath));
         }
     }
 

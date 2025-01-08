@@ -14,11 +14,9 @@ import org.apache.log4j.Logger;
 @Setter
 public class SQLServerOperations {
 
-
-    private static final FnDbTableRepo fnDbTableRepo = new FnDbTableRepo();
     private static final Logger logger = Logger.getLogger(SQLServerOperations.class);
 
-    public static void retreiveSecurableObjects(String dbHost, String dbPort, String dbName, String dbUserName, String dbUserPswd, String schemaName, String csvFilePath) {
+    public static void retreiveSecurableObjects(String dbHost, String dbPort, String dbName, String dbUserName, String dbUserPswd, String schemaName, String csvFilePath, FnDbTableRepo fnDbTableRepo) {
         String connectionString = "jdbc:sqlserver://" + dbHost + ":" + dbPort + ";databaseName="
                 + dbName + ";encrypt=false;user=" + dbUserName + ";password=" + dbUserPswd;
         Connection connection = null;
@@ -33,7 +31,7 @@ public class SQLServerOperations {
             executeCursor(connection, schemaName);
             // Paso 3: Consultar la tabla temporal y guardar resultados
             queryTemporaryTableToCsv(connection, csvFilePath);
-            queryTempToFnDbTableRepo(connection);
+            queryTempToFnDbTableRepo(connection, fnDbTableRepo);
 
         } catch (Exception e) {
             //e.printStackTrace();
@@ -96,7 +94,6 @@ public class SQLServerOperations {
             try (Statement stmt = connection.createStatement();
                  ResultSet resultSet = stmt.executeQuery(querySQL)) {
                 ResultExporter.exportSelectFromTableToCsv(resultSet, resultsFilePath);
-                logger.info(String.format("Exporting results from temporary table to %s", resultsFilePath));
             }
         }
     }
@@ -106,25 +103,17 @@ public class SQLServerOperations {
 
         try (Statement stmt = connection.createStatement();
              ResultSet resultSet = stmt.executeQuery(querySQL)) {
-            ResultExporter.exportSelectFromTableToJson(resultSet, resultsFilePath);
+            ResultExporter.exportSelectFromTableToJsonFile(resultSet, resultsFilePath);
             logger.info(String.format("Exporting results from temporary table to %s", resultsFilePath));
         }
     }
 
-    private static void queryTempToFnDbTableRepo(Connection connection) throws Exception {
+    private static void queryTempToFnDbTableRepo(Connection connection, FnDbTableRepo fnDbTableRepo) throws Exception {
         String querySQL = "SELECT * FROM #TablesResults ORDER BY table_name;";
 
         try (Statement stmt = connection.createStatement();
              ResultSet resultSet = stmt.executeQuery(querySQL)) {
             ResultExporter.exportSelectToFnDbTables(resultSet, fnDbTableRepo);
-            logger.info(String.format("Exporting results from temporary table to FnDbTableRepo - # Records: %d",fnDbTableRepo.getFnDbTables().size()));
         }
     }
-
-    // Ejemplo de uso
-    public static void main(String[] args) {
-        retreiveSecurableObjects("172.16.16.113","1433","testing",
-                "sa","Lpa23291","dbo",null);
-    }
-
 }

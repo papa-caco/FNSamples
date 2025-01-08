@@ -158,6 +158,33 @@ public class P8PrincipalCollector
         }
     }
 
+    public static void collectPrincipalsFromPropertyTemplates(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String propertiesSearch) {
+        try{
+            logger.info(String.format("Collecting Principals from Property Templates - Object Store: %s", osName));
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,propertiesSearch);
+            if(!(independentObjectSet.isEmpty())){
+                int count=0;
+                @SuppressWarnings("rawtypes")
+                Iterator it=independentObjectSet.iterator();
+                if (it.hasNext()){
+                    do {
+                        count++;
+                        PropertyTemplate propertyTemplate= (PropertyTemplate) it.next();
+                        principalRepo.addPrincipalFromObjectOwner(propertyTemplate.get_Owner(), p8realm);
+                        P8Logger.logPropertyTemplatesProperties(logger, propertyTemplate, count);
+                        if (!(propertyTemplate.get_Permissions().isEmpty()))
+                            principalRepo.addPrincipalsFromPermissions(propertyTemplate.get_Permissions(), p8realm);
+                    } while (it.hasNext());
+                }
+                logger.info("Total Property Templates: " + count);
+            }
+            else logger.info("No Property Templates were found!");
+        }
+        catch(Exception e){
+            //e.printStackTrace();
+        }
+    }
+
     public static void collectPrincipalsFromChoiceLists(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String classSearch) {
         try{
             logger.info(String.format("Collecting Principals from Choice Lists - Object Store: %s", osName));

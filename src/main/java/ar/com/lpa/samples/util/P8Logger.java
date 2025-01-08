@@ -67,7 +67,7 @@ public class P8Logger {
             // Loggear los valores obtenidos
             logger.debug("Class Definition#: " + count);
             logger.debug("               Id: " + classDefinition.get_Id().toString());
-            logger.debug("             Name: " + classDefinition.get_Name());
+            logger.debug("    Symbolic Name: " + classDefinition.get_SymbolicName());
             logger.debug("            Class: " + classDefinition.getClassName());
             logger.debug("            Owner: " + classDefinition.get_Owner());
             logger.debug("    Permissions #: " + classDefinition.get_Permissions().size());
@@ -90,6 +90,21 @@ public class P8Logger {
 
         } catch (Exception e) {
             logger.error("Error loggeando entidad: " + annotation, e);
+        }
+    }
+
+    public static void logPropertyTemplatesProperties(Logger logger, PropertyTemplate propertyTemplate, int count) {
+        try {
+            // Loggear los valores obtenidos
+            logger.debug(" Property Template#: " + count);
+            logger.debug("        Id: " + propertyTemplate.get_Id().toString());
+            logger.debug("      Name: " + propertyTemplate.get_SymbolicName());
+            logger.debug("     Class: " + propertyTemplate.getClassName());
+            logger.debug("     Owner: " + propertyTemplate.get_Owner());
+            logger.debug("Permissions #: " + propertyTemplate.get_Permissions().size());
+
+        } catch (Exception e) {
+            logger.error("Error loggeando entidad: " + propertyTemplate, e);
         }
     }
 
