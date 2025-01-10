@@ -41,9 +41,12 @@ public class LdapUsersRepo {
         String pattern = String.valueOf(initial);
         UserSet userSet = realm.findUsers(pattern, PrincipalSearchType.PREFIX_MATCH,PrincipalSearchAttribute.SHORT_NAME,PrincipalSearchSortType.NONE,Integer.valueOf("50"), null);
         // Iteramos sobre los elementos del UserSet y los agregamos
+		int count = 0;
     	Iterator<User> it = userSet.iterator();
     	while (it.hasNext()) {
     		User user = (User)it.next();
+			count++;
+			System.out.println(count + " - " + user.get_Name());
 			LdapUser ldapUser = LdapUser.instanceFromUser(user);
     		usersCollection.add(ldapUser);
     	}
