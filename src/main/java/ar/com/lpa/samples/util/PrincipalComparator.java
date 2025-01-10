@@ -19,7 +19,7 @@ public class PrincipalComparator implements Comparator<Principal> {
         }
         if (p2.getSamAccountName() == null) {
             return 1; // p2 es null, va primero
-        } // Si ambos no son null, compararlos alfabéticamente
+        } // Si ambos no son null, compararlos alfabeticamente
         return p1.getSamAccountName().compareTo(p2.getSamAccountName());
     }
 }

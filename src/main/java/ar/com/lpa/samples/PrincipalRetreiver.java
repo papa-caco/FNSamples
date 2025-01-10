@@ -48,9 +48,6 @@ public class PrincipalRetreiver {
         String sweepSearch = configLoader.getProperty("sweepSearch");
         String sweepPolicySearch = configLoader.getProperty("sweepPolicySearch");
         String tableDefinitionSearch = configLoader.getProperty("tableDefinitionSearch");
-        String downloadRecordSearch = configLoader.getProperty("downloadRecordSearch");
-        String summaryDataSearch = configLoader.getProperty("summaryDataSearch");
-        String customRoleBaseSearch = configLoader.getProperty("customRoleBaseSearch");
         String tablesCsvFile = configLoader.getProperty("tablesCsvFile");
         String ldapUsersCsvFile = configLoader.getProperty("LdapUsersCsvFile");
         String ldapGroupsCsvFile = configLoader.getProperty("LdapGroupsCsvFile");
@@ -121,13 +118,13 @@ public class PrincipalRetreiver {
                     P8PrincipalCollector.collectPrincipalsFromTabledefinitions(currentPrincipals, p8realm, objectStore,tableDefinitionSearch);
                     break;
                 case "UT_ClbDownloadRecord":
-                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, downloadRecordSearch);
+                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, "ClbDownloadRecord");
                     break;
                 case "UT_ClbSummaryData":
-                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, summaryDataSearch);
+                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, "ClbSummaryData");
                     break;
                 case "UT_CmCustomRoleBase":
-                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, customRoleBaseSearch);
+                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, "CmCustomRoleBase");
                     break;
                 default:
                     break;

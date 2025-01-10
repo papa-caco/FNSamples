@@ -16,13 +16,13 @@ public class SIDConverters
 	    int revision = Integer.parseInt(sidParts[0]);
 	    // Identifier Authority (Big-Endian, ocupa 6 bytes)
 	    long identifierAuthority = Long.parseLong(sidParts[1]);
-	    // SubAuthorities (los números después de la autoridad)
+	    // SubAuthorities (los numeros despues de la autoridad)
 	    int subAuthorityCount = sidParts.length - 2;
 	    long[] subAuthorities = new long[subAuthorityCount];
 	    for (int i = 0; i < subAuthorityCount; i++) {
 	        subAuthorities[i] = Long.parseLong(sidParts[i + 2]);
 	    }
-	    // Calcular el tamaño total del array de bytes
+	    // Calcular el tamanio total del array de bytes
 	    int totalBytes = 8 + (subAuthorityCount * 4); // 1 byte para revision, 1 para subcount, 6 para authority, 4 por subauthority
 	    Byte[] binarySid = new Byte[totalBytes];
 	    // Asignar el revision
