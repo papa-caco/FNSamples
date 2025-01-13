@@ -1,10 +1,9 @@
 package ar.com.lpa.samples.repository;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
-import ar.com.lpa.samples.model.LdapGroup;
 import com.filenet.api.collection.GroupSet;
 import com.filenet.api.constants.PrincipalSearchAttribute;
 import com.filenet.api.constants.PrincipalSearchSortType;
@@ -16,36 +15,34 @@ import ar.com.lpa.samples.util.Utilities;
 import lombok.Getter;
 import lombok.Setter;
 
-
 @Getter
 @Setter
-public class LdapGroupsRepo {
+public class RealmGroupsRepo {
 
-	private final Collection<LdapGroup> ldapGroups = new ArrayList<>();
+	private final List<Group> realmGroups = new ArrayList<>();
 	
-    public void setLdapGroups(Realm realm)
+    public void setRealmGroups(Realm realm)
     {
     	for (char c = 'A'; c <= 'Z'; c++) 
         {
-    		ldapGroups.addAll(getGroupsCollectionByPattern(c, realm));
+    		realmGroups.addAll(getGroupsCollectionByPattern(c, realm));
         }    
         for (char c = '0'; c <= '9'; c++) 
         {
-        	ldapGroups.addAll(getGroupsCollectionByPattern(c, realm));
+        	realmGroups.addAll(getGroupsCollectionByPattern(c, realm));
         } 	
     }
 
-	private Collection<LdapGroup> getGroupsCollectionByPattern(char initial, Realm realm)
+	private List<Group> getGroupsCollectionByPattern(char initial, Realm realm)
     {
-        Collection<LdapGroup> GroupsCollection = new ArrayList<>();
+        List<Group> GroupsCollection = new ArrayList<>();
         String pattern = String.valueOf(initial);
         GroupSet GroupSet = realm.findGroups(pattern, PrincipalSearchType.PREFIX_MATCH,PrincipalSearchAttribute.SHORT_NAME,PrincipalSearchSortType.NONE,Integer.valueOf("50"), null);
         // Iteramos sobre los elementos del GroupSet y los agregamos
 		Iterator<Group> it = GroupSet.iterator();
     	while (it.hasNext()) {
     		Group group = (Group)it.next();
-			LdapGroup ldapGroup = LdapGroup.instanceFromGroup(group);
-    		GroupsCollection.add(ldapGroup);
+    		GroupsCollection.add(group);
     	}
     	//System.out.println(String.valueOf(GroupsCollection.size()) + " Groups with \"" + pattern + "\"");
         return GroupsCollection;
@@ -54,11 +51,11 @@ public class LdapGroupsRepo {
     public String getGroupSidFromDn(String dN)
     {
     	String groupSiD = null;
-    	for (LdapGroup ldapGroup : this.ldapGroups)
+    	for (Group group : this.realmGroups)
     	{
-    		if (ldapGroup.getDistinguishedName().equals(dN))
+    		if (group.get_DistinguishedName().equals(dN))
     		{
-    			groupSiD = ldapGroup.getGroupSID();
+    			groupSiD = group.get_Id();
     			break;
     		}
     	}
@@ -68,11 +65,11 @@ public class LdapGroupsRepo {
     public String getGroupSidFromShortName(String shortName)
     {
     	String groupSid = null;
-    	for (LdapGroup ldapGroup : this.ldapGroups)
+    	for (Group group : this.realmGroups)
     	{
-    		if (ldapGroup.getShortName().equals(shortName))
+    		if (group.get_ShortName().equals(shortName))
     		{
-    			groupSid = ldapGroup.getGroupSID();
+    			groupSid = group.get_Id();
     			break;
     		}
     	}
@@ -82,11 +79,11 @@ public class LdapGroupsRepo {
     public String getGroupDnFromShortName(String shortName)
     {
     	String dN = null;
-    	for (LdapGroup ldapGroup : this.ldapGroups)
+    	for (Group group : this.realmGroups)
     	{
-    		if (ldapGroup.getShortName().equals(shortName))
+    		if (group.get_ShortName().equals(shortName))
     		{
-    			dN = ldapGroup.getDistinguishedName();
+    			dN = group.get_DistinguishedName();
     			break;
     		}
     	}
@@ -97,11 +94,11 @@ public class LdapGroupsRepo {
     {
     	String groupShortName = null;
     	String name = Utilities.extractShortName(uPN);
-    	for (LdapGroup ldapGroup : this.ldapGroups)
+    	for (Group group : this.realmGroups)
     	{
-    		if (ldapGroup.getShortName().equals(name))
+    		if (group.get_ShortName().equals(name))
     		{
-    			groupShortName = ldapGroup.getShortName();
+    			groupShortName = group.get_ShortName();
     			break;
     		}
     	}
@@ -111,11 +108,11 @@ public class LdapGroupsRepo {
     public String getGroupShortNameFromDn(String dN)
     {
     	String groupShortName = null;
-    	for (LdapGroup ldapGroup : this.ldapGroups)
+    	for (Group group : this.realmGroups)
     	{
-    		if (ldapGroup.getDistinguishedName().equals(dN))
+    		if (group.get_DistinguishedName().equals(dN))
     		{
-    			groupShortName = ldapGroup.getShortName();
+    			groupShortName = group.get_ShortName();
     			break;
     		}
     	}

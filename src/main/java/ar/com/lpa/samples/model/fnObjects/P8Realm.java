@@ -1,11 +1,11 @@
 package ar.com.lpa.samples.model.fnObjects;
 
+import ar.com.lpa.samples.repository.RealmGroupsRepo;
 import com.filenet.api.security.Realm;
 
 import org.apache.log4j.Logger;
 
-import ar.com.lpa.samples.repository.LdapGroupsRepo;
-import ar.com.lpa.samples.repository.LdapUsersRepo;
+import ar.com.lpa.samples.repository.RealmUsersRepo;
 
 import lombok.Getter;
 
@@ -13,8 +13,8 @@ import lombok.Getter;
 public class P8Realm {
 	private final P8Domain p8domain = new P8Domain();
 	private Realm realm = null;
-    private final LdapUsersRepo realmUsers = new LdapUsersRepo();
-    private final LdapGroupsRepo realmGroups = new LdapGroupsRepo();
+    private final RealmUsersRepo realmUsers = new RealmUsersRepo();
+    private final RealmGroupsRepo realmGroups = new RealmGroupsRepo();
 	
 	public void setP8Domain() 
 	{
@@ -32,18 +32,18 @@ public class P8Realm {
 				logger.info(String.format("P8 Domain: %s", p8domain.getDomain().get_Name()));
 				this.setUserGroupRepos();
 				logger.info(String.format("Found %s Users & %s Groups at domain: %s",
-						this.getRealmUsers().getLdapUsers().size(),
-						this.getRealmGroups().getLdapGroups().size(), this.getRealm().get_Name()));
+						this.getRealmUsers().getRealmUsers().size(),
+						this.getRealmGroups().getRealmGroups().size(), this.getRealm().get_Name()));
 			}
 		} catch(Exception e){
-	   		 e.printStackTrace();
+	   		 //e.printStackTrace();
 		}
 	}
 	
 	private void setUserGroupRepos() 
 	{
-		this.realmUsers.setLdapUsers(this.realm);
-		this.realmGroups.setLdapGroups(this.realm);
+		this.realmUsers.setRealmUsers(this.realm);
+		this.realmGroups.setRealmGroups(this.realm);
 	}
 	
 	public void setConnectionUser(String user) {

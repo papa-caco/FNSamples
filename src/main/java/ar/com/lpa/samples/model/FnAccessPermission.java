@@ -18,9 +18,10 @@ public class FnAccessPermission {
     private String granteeName;
     private PrincipalType principalType;
     private PermissionSource permissionSource;
-    private Integer accessMask;
-    private AccessType accessType;
-    private Integer inheritableDepth;
+    private int accessMask;
+    private int accessType;
+    private int inheritableDepth;
+    private char status;
 
     public FnAccessPermission constructFromAccessPermission(String objectId, FnObjectType fnObjectType, AccessPermission accessPermission)
     {
@@ -31,9 +32,9 @@ public class FnAccessPermission {
         fnAccessPermission.setPrincipalType(PrincipalType.valueOf(accessPermission.get_GranteeType().toString()));
         fnAccessPermission.setPermissionSource(accessPermission.get_PermissionSource());
         fnAccessPermission.setAccessMask(accessPermission.get_AccessMask());
-        fnAccessPermission.setAccessType(accessPermission.get_AccessType());
-        fnAccessPermission.setInheritableDepth(fnAccessPermission.getInheritableDepth());
-
+        fnAccessPermission.setAccessType(accessPermission.get_AccessType().getValue());
+        fnAccessPermission.setInheritableDepth(accessPermission.get_InheritableDepth());
+        fnAccessPermission.setStatus('N');
         return fnAccessPermission;
     }
 

@@ -9,12 +9,11 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
-import ar.com.lpa.samples.model.FnDbTable;
-import ar.com.lpa.samples.model.LdapGroup;
-import ar.com.lpa.samples.model.LdapUser;
+import ar.com.lpa.samples.model.*;
 import ar.com.lpa.samples.repository.FnDbTableRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ar.com.lpa.samples.model.Principal;
+import com.filenet.api.security.Group;
+import com.filenet.api.security.User;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -137,6 +136,28 @@ public class ResultExporter {
         }
     }
 
+    public static void exportUsersToCsv(List<User> users, String filePath) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(filePath);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            // Escribir encabezados
+            bufferedWriter.write("\"userSID\"|\"name\"|\"distinguishedName\"|\"shortName\"|\"displayName\"|\"eMail\"");
+            bufferedWriter.newLine();
+            // Escribir filas
+            for (User user : users) {
+                String userSID = user.get_Id();
+                String name = user.get_Name();
+                String distiguishedName = user.get_DistinguishedName();
+                String shortName = user.get_ShortName();
+                String displayName = user.get_DisplayName();
+                String eMail = user.get_Email();
+                String line = String.format("\"%s\"|\"%s\"|\"%s\"|\"%s\"|\"%s\"|\"%s\"", userSID, name ,distiguishedName, shortName, displayName, eMail);
+                bufferedWriter.write(line);
+                bufferedWriter.newLine();
+            }
+            logger.info(String.format("Exported %d LDAP Users to %s", users.size(), filePath));
+        }
+    }
+
     public static void exportLdapGroupsToCsv(Collection<LdapGroup> ldapGroups, String filePath) throws IOException {
         try (FileWriter fileWriter = new FileWriter(filePath);
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
@@ -158,6 +179,27 @@ public class ResultExporter {
         }
     }
 
+    public static void exportGroupsToCsv(List<Group> groups, String filePath) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(filePath);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            // Escribir encabezados
+            bufferedWriter.write("\"groupSID\"|\"name\"|\"distinguishedName\"|\"shortName\"|\"displayName\"");
+            bufferedWriter.newLine();
+            // Escribir filas
+            for (Group group : groups) {
+                String groupSID = group.get_Id();
+                String name = group.get_Name();
+                String distiguishedName = group.get_DistinguishedName();
+                String shortName = group.get_ShortName();
+                String displayName = group.get_DisplayName();
+                String line = String.format("\"%s\"|\"%s\"|\"%s\"|\"%s\"|\"%s\"", groupSID, name ,distiguishedName, shortName, displayName);
+                bufferedWriter.write(line);
+                bufferedWriter.newLine();
+            }
+            logger.info(String.format("Exported %d LDAP Groups to %s", groups.size(), filePath));
+        }
+    }
+
     public static void exportPrincipalsToCsv(Collection<Principal> principals, String filePath) throws IOException {
         try (FileWriter fileWriter = new FileWriter(filePath);
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
@@ -175,6 +217,27 @@ public class ResultExporter {
                 bufferedWriter.newLine();
             }
             logger.info(String.format("Exported %d Principals to %s", principals.size(), filePath));
+        }
+    }
+
+    public static void exportOwnersToCsv(List<FnOwner> fnOwners, String filePath) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(filePath);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            // Escribir encabezados
+            bufferedWriter.write("\"objectId\"|\"fnObjectType\"|\"sourceOwner\"|\"destOwner\"|\"status\"");
+            bufferedWriter.newLine();
+            // Escribir filas
+            for (FnOwner fnOwner : fnOwners) {
+                String objectId = fnOwner.getObjectId() ;
+                String fnObjectType = fnOwner.getFnObjectType().toString();
+                String sourceOwner = fnOwner.getSourceOwner();
+                String destOwner = fnOwner.getDestinationOwner();
+                char status = fnOwner.getStatus();
+                String line = String.format("\"%s\"|\"%s\"|\"%s\"|\"%s\"|\"%s\"", objectId, fnObjectType, sourceOwner, destOwner, status);
+                bufferedWriter.write(line);
+                bufferedWriter.newLine();
+            }
+            logger.info(String.format("Exported %d Owners to %s", fnOwners.size(), filePath));
         }
     }
 

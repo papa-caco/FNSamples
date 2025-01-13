@@ -10,6 +10,7 @@ import ar.com.lpa.samples.util.P8Logger;
 import ar.com.lpa.samples.util.Utilities;
 import com.filenet.api.collection.AccessPermissionList;
 import com.filenet.api.security.AccessPermission;
+import com.filenet.api.security.Permission;
 import lombok.Getter;
 import org.apache.log4j.Logger;
 

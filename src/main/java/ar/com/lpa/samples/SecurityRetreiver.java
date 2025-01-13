@@ -9,19 +9,18 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
-public class PrincipalRetreiver {
-    private static final Logger logger = Logger.getLogger(PrincipalRetreiver.class);
+public class SecurityRetreiver {
+    private static final Logger logger = Logger.getLogger(SecurityRetreiver.class);
     private static final P8Realm p8realm = new P8Realm();
-    private static final PrincipalRepo currentPrincipals = new PrincipalRepo();
     private static final FnDbTableRepo fnDbTableRepo = new FnDbTableRepo();
 
     public static void main(String[] args) throws IOException {
         String configPath = "config.properties";
         ConfigLoader configLoader = new ConfigLoader(configPath);
         // Load attribute values from configuration file
-        PrincipalRetreiver.p8realm.setConnectionCeUri(configLoader.getProperty("ceURI"));
-        PrincipalRetreiver.p8realm.setConnectionUser(configLoader.getProperty("userName"));
-        PrincipalRetreiver.p8realm.setConnectionPswd(configLoader.getProperty("password"));
+        SecurityRetreiver.p8realm.setConnectionCeUri(configLoader.getProperty("ceURI"));
+        SecurityRetreiver.p8realm.setConnectionUser(configLoader.getProperty("userName"));
+        SecurityRetreiver.p8realm.setConnectionPswd(configLoader.getProperty("password"));
         p8realm.setRealm(logger);
 
         String dbType = configLoader.getProperty("dbType");
@@ -53,6 +52,7 @@ public class PrincipalRetreiver {
         String ldapGroupsCsvFile = configLoader.getProperty("LdapGroupsCsvFile");
         String principalsCsvFile = configLoader.getProperty("PrincipalsCsvFile");
         String principalsJsonFile = configLoader.getProperty("PrincipalsJsonFile");
+        String ownersJsonFile = configLoader.getProperty("OwnersJsonFile");
 
         /*String usersJson = ResultExporter.expUsersToJsonOnConsole(p8realm.getRealmUsers().getLdapUsers());
         if (usersJson != null) {
@@ -64,10 +64,10 @@ public class PrincipalRetreiver {
         if (groupsJson != null) {
             System.out.println(groupsJson);
         }*/
-        ResultExporter.exportGroupsToCsv(p8realm.getRealmGroups().getRealmGroups(),ldapGroupsCsvFile );
-        if(dbType.equals("SQLServer")){
-            SQLServerOperations.retreiveSecurableObjects(dbHost, dbPort, databaseName,dbUserName,dbUserPswd,schemaName,tablesCsvFile, fnDbTableRepo);
-        } else if (dbType.equals("Oracle")){
+        ResultExporter.exportGroupsToCsv(p8realm.getRealmGroups().getRealmGroups(), ldapGroupsCsvFile);
+        if (dbType.equals("SQLServer")) {
+            SQLServerOperations.retreiveSecurableObjects(dbHost, dbPort, databaseName, dbUserName, dbUserPswd, schemaName, tablesCsvFile, fnDbTableRepo);
+        } else if (dbType.equals("Oracle")) {
             // TODO
         } else if (dbType.equals("DB2")) {
             // TODO
@@ -75,70 +75,63 @@ public class PrincipalRetreiver {
         for (FnDbTable fnDbTable : fnDbTableRepo.getFnDbTables()) {
             switch (fnDbTable.getTableName()) {
                 case "Annotation":
-                    P8PrincipalCollector.collectPrincipalsFromAnnotations(currentPrincipals, p8realm, objectStore, annotationSearch);
+                    P8SecurityCollector.collectPrincipalsFromAnnotations(p8realm, objectStore, annotationSearch);
                     break;
                 case "GlobalPropertyDef":
-                    P8PrincipalCollector.collectPrincipalsFromPropertyTemplates(currentPrincipals, p8realm, objectStore, propertyTemplateSearch);
+                    P8SecurityCollector.collectPrincipalsFromPropertyTemplates(p8realm, objectStore, propertyTemplateSearch);
                     break;
                 case "ClassDefinition":
-                    P8PrincipalCollector.collectPrincipalsFromClassDefinitions(currentPrincipals, p8realm, objectStore, classSearch);
+                    P8SecurityCollector.collectPrincipalsFromClassDefinitions(p8realm, objectStore, classSearch);
                     break;
                 case "Container":
-                    P8PrincipalCollector.collectPrincipalsFromFolders(currentPrincipals, p8realm, objectStore, folderSearch);
+                    P8SecurityCollector.collectPrincipalsFromFolders(p8realm, objectStore, folderSearch);
                     break;
                 case "DocVersion":
-                    P8PrincipalCollector.collectPrincipalsFromDocuments(currentPrincipals, p8realm, objectStore, documentSearch);
+                    P8SecurityCollector.collectPrincipalsFromDocuments(p8realm, objectStore, documentSearch);
                     break;
                 case "Cvl":
-                    P8PrincipalCollector.collectPrincipalsFromChoiceLists(currentPrincipals, p8realm, objectStore, choiceListSearch);
+                    P8SecurityCollector.collectPrincipalsFromChoiceLists(p8realm, objectStore, choiceListSearch);
                     break;
                 case "Generic":
-                    P8PrincipalCollector.collectPrincipalsFromCustomObjects(currentPrincipals, p8realm, objectStore, customObjectSearch);
+                    P8SecurityCollector.collectPrincipalsFromCustomObjects(p8realm, objectStore, customObjectSearch);
                     break;
                 case "StorageClass":
-                    P8PrincipalCollector.collectPrincipalsFromStoragePolicies(currentPrincipals, p8realm, objectStore, storagePolicySearch);
-                    P8PrincipalCollector.collectPrincipalsFromStorageAreas(currentPrincipals, p8realm, objectStore, storageAreaSearch);
+                    P8SecurityCollector.collectPrincipalsFromStoragePolicies(p8realm, objectStore, storagePolicySearch);
+                    P8SecurityCollector.collectPrincipalsFromStorageAreas(p8realm, objectStore, storageAreaSearch);
                     break;
                 case "SecurityPolicy": //Includes SecurityTemplate
-                    P8PrincipalCollector.collectPrincipalsFromSecurityPolicies(currentPrincipals, p8realm, objectStore, securityPolicySearch);
+                    P8SecurityCollector.collectPrincipalsFromSecurityPolicies(p8realm, objectStore, securityPolicySearch);
                     break;
                 case "Event":
-                    P8PrincipalCollector.collectPrincipalsFromEvents(currentPrincipals, p8realm, objectStore, eventSearch);
+                    P8SecurityCollector.collectPrincipalsFromEvents(p8realm, objectStore, eventSearch);
                     break;
                 case "Subscription":
-                    P8PrincipalCollector.collectPrincipalsFromSubscriptions(currentPrincipals, p8realm, objectStore, subscriptionSearch);
+                    P8SecurityCollector.collectPrincipalsFromSubscriptions(p8realm, objectStore, subscriptionSearch);
                     break;
                 case "Sweep":
-                    P8PrincipalCollector.collectPrincipalsFromSweeps(currentPrincipals, p8realm, objectStore, sweepSearch);
+                    P8SecurityCollector.collectPrincipalsFromSweeps(p8realm, objectStore, sweepSearch);
                     break;
                 case "SweepPolicy":
-                    P8PrincipalCollector.collectPrincipalsFromSweepPolicies(currentPrincipals, p8realm, objectStore, sweepPolicySearch);
+                    P8SecurityCollector.collectPrincipalsFromSweepPolicies(p8realm, objectStore, sweepPolicySearch);
                     break;
                 case "TableDefinition":
-                    P8PrincipalCollector.collectPrincipalsFromTabledefinitions(currentPrincipals, p8realm, objectStore,tableDefinitionSearch);
+                    P8SecurityCollector.collectPrincipalsFromTabledefinitions(p8realm, objectStore, tableDefinitionSearch);
                     break;
                 case "UT_ClbDownloadRecord":
-                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, "ClbDownloadRecord");
+                    P8SecurityCollector.collectPrincipalsFromAbstractsPersistable(p8realm, objectStore, "ClbDownloadRecord");
                     break;
                 case "UT_ClbSummaryData":
-                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, "ClbSummaryData");
+                    P8SecurityCollector.collectPrincipalsFromAbstractsPersistable(p8realm, objectStore, "ClbSummaryData");
                     break;
                 case "UT_CmCustomRoleBase":
-                    P8PrincipalCollector.collectPrincipalsFromAbstractsPersistable(currentPrincipals, p8realm, objectStore, "CmCustomRoleBase");
+                    P8SecurityCollector.collectPrincipalsFromAbstractsPersistable(p8realm, objectStore, "CmCustomRoleBase");
                     break;
                 default:
                     break;
             }
         }
+        P8SecurityCollector.exportPrincipalsToFiles(principalsJsonFile, principalsCsvFile);
+        P8SecurityCollector.exportOwnersToCsv(ownersJsonFile);
 
-        currentPrincipals.getPrincipals().sort(new PrincipalComparator());
-        ResultExporter.exportPrincipalCollectionToJsonfile(currentPrincipals.getPrincipals(), principalsJsonFile);
-        ResultExporter.exportPrincipalsToCsv(currentPrincipals.getPrincipals(), principalsCsvFile);
-/*
-        String principalsJson = ResultExporter.exportPrincipalCollectionToJsonOnConsole(currentPrincipals.getPrincipals());
-        if (principalsJson != null) {
-            System.out.println(principalsJson);
-        }
- */
     }
 }
