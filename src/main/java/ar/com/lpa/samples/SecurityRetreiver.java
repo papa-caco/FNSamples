@@ -3,7 +3,6 @@ package ar.com.lpa.samples;
 import ar.com.lpa.samples.model.FnDbTable;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
 import ar.com.lpa.samples.repository.FnDbTableRepo;
-import ar.com.lpa.samples.repository.PrincipalRepo;
 import ar.com.lpa.samples.util.*;
 import org.apache.log4j.Logger;
 
@@ -66,12 +65,16 @@ public class SecurityRetreiver {
             System.out.println(groupsJson);
         }*/
         ResultExporter.exportGroupsToCsv(p8realm.getRealmGroups().getRealmGroups(), ldapGroupsCsvFile);
-        if (dbType.equals("SQLServer")) {
-            SQLServerOperations.retreiveSecurableObjects(dbHost, dbPort, databaseName, dbUserName, dbUserPswd, schemaName, tablesCsvFile, fnDbTableRepo);
-        } else if (dbType.equals("Oracle")) {
-            // TODO
-        } else if (dbType.equals("DB2")) {
-            // TODO
+        switch (dbType) {
+            case "SQLServer":
+                SQLServerOperations.retreiveSecurableObjects(dbHost, dbPort, databaseName, dbUserName, dbUserPswd, schemaName, tablesCsvFile, fnDbTableRepo);
+                break;
+            case "Oracle":
+                // TODO
+                break;
+            case "DB2":
+                // TODO
+                break;
         }
         for (FnDbTable fnDbTable : fnDbTableRepo.getFnDbTables()) {
             switch (fnDbTable.getTableName()) {
