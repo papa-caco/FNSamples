@@ -52,7 +52,8 @@ public class SecurityRetreiver {
         String ldapGroupsCsvFile = configLoader.getProperty("LdapGroupsCsvFile");
         String principalsCsvFile = configLoader.getProperty("PrincipalsCsvFile");
         String principalsJsonFile = configLoader.getProperty("PrincipalsJsonFile");
-        String ownersJsonFile = configLoader.getProperty("OwnersJsonFile");
+        String ownersCsvFile = configLoader.getProperty("OwnersCsvFile");
+        String permissionsCsvFile = configLoader.getProperty("PermissionsCsvFile");
 
         /*String usersJson = ResultExporter.expUsersToJsonOnConsole(p8realm.getRealmUsers().getLdapUsers());
         if (usersJson != null) {
@@ -74,64 +75,64 @@ public class SecurityRetreiver {
         }
         for (FnDbTable fnDbTable : fnDbTableRepo.getFnDbTables()) {
             switch (fnDbTable.getTableName()) {
-                case "Annotation":
-                    P8SecurityCollector.collectPrincipalsFromAnnotations(p8realm, objectStore, annotationSearch);
+               case "Annotation":
+                    P8SecurityCollector.collectSecurityFromAnnotations(p8realm, objectStore, annotationSearch);
                     break;
                 case "GlobalPropertyDef":
-                    P8SecurityCollector.collectPrincipalsFromPropertyTemplates(p8realm, objectStore, propertyTemplateSearch);
+                    P8SecurityCollector.collectSecurityFromPropertyTemplates(p8realm, objectStore, propertyTemplateSearch);
                     break;
                 case "ClassDefinition":
-                    P8SecurityCollector.collectPrincipalsFromClassDefinitions(p8realm, objectStore, classSearch);
+                    P8SecurityCollector.collectSecurityFromClassDefinitions(p8realm, objectStore, classSearch);
                     break;
                 case "Container":
-                    P8SecurityCollector.collectPrincipalsFromFolders(p8realm, objectStore, folderSearch);
+                    P8SecurityCollector.collectSecurityFromFolders(p8realm, objectStore, folderSearch);
                     break;
                 case "DocVersion":
-                    P8SecurityCollector.collectPrincipalsFromDocuments(p8realm, objectStore, documentSearch);
+                    P8SecurityCollector.collectSecurityFromDocuments(p8realm, objectStore, documentSearch);
                     break;
                 case "Cvl":
-                    P8SecurityCollector.collectPrincipalsFromChoiceLists(p8realm, objectStore, choiceListSearch);
+                    P8SecurityCollector.collectSecurityFromChoiceLists(p8realm, objectStore, choiceListSearch);
                     break;
                 case "Generic":
-                    P8SecurityCollector.collectPrincipalsFromCustomObjects(p8realm, objectStore, customObjectSearch);
+                    P8SecurityCollector.collectSecurityFromCustomObjects(p8realm, objectStore, customObjectSearch);
                     break;
                 case "StorageClass":
-                    P8SecurityCollector.collectPrincipalsFromStoragePolicies(p8realm, objectStore, storagePolicySearch);
-                    P8SecurityCollector.collectPrincipalsFromStorageAreas(p8realm, objectStore, storageAreaSearch);
+                    P8SecurityCollector.collectSecurityFromStoragePolicies(p8realm, objectStore, storagePolicySearch);
+                    P8SecurityCollector.collectSecurityFromStorageAreas(p8realm, objectStore, storageAreaSearch);
                     break;
-                case "SecurityPolicy": //Includes SecurityTemplate
-                    P8SecurityCollector.collectPrincipalsFromSecurityPolicies(p8realm, objectStore, securityPolicySearch);
+                case "SecurityPolicy": //Include Security Templates
+                    P8SecurityCollector.collectSecurityFromSecurityPolicies(p8realm, objectStore, securityPolicySearch);
                     break;
                 case "Event":
-                    P8SecurityCollector.collectPrincipalsFromEvents(p8realm, objectStore, eventSearch);
+                    P8SecurityCollector.collectSecurityFromEvents(p8realm, objectStore, eventSearch);
                     break;
                 case "Subscription":
-                    P8SecurityCollector.collectPrincipalsFromSubscriptions(p8realm, objectStore, subscriptionSearch);
+                    P8SecurityCollector.collectSecurityFromSubscriptions(p8realm, objectStore, subscriptionSearch);
                     break;
                 case "Sweep":
-                    P8SecurityCollector.collectPrincipalsFromSweeps(p8realm, objectStore, sweepSearch);
+                    P8SecurityCollector.collectSecurityFromSweeps(p8realm, objectStore, sweepSearch);
                     break;
                 case "SweepPolicy":
-                    P8SecurityCollector.collectPrincipalsFromSweepPolicies(p8realm, objectStore, sweepPolicySearch);
+                    P8SecurityCollector.collectSecurityFromSweepPolicies(p8realm, objectStore, sweepPolicySearch);
                     break;
                 case "TableDefinition":
-                    P8SecurityCollector.collectPrincipalsFromTabledefinitions(p8realm, objectStore, tableDefinitionSearch);
+                    P8SecurityCollector.collectSecurityFromTabledefinitions(p8realm, objectStore, tableDefinitionSearch);
                     break;
                 case "UT_ClbDownloadRecord":
-                    P8SecurityCollector.collectPrincipalsFromAbstractsPersistable(p8realm, objectStore, "ClbDownloadRecord");
+                    P8SecurityCollector.collectSecurityFromAbstractsPersistable(p8realm, objectStore, "ClbDownloadRecord");
                     break;
                 case "UT_ClbSummaryData":
-                    P8SecurityCollector.collectPrincipalsFromAbstractsPersistable(p8realm, objectStore, "ClbSummaryData");
+                    P8SecurityCollector.collectSecurityFromAbstractsPersistable(p8realm, objectStore, "ClbSummaryData");
                     break;
                 case "UT_CmCustomRoleBase":
-                    P8SecurityCollector.collectPrincipalsFromAbstractsPersistable(p8realm, objectStore, "CmCustomRoleBase");
+                    P8SecurityCollector.collectSecurityFromAbstractsPersistable(p8realm, objectStore, "CmCustomRoleBase");
                     break;
                 default:
                     break;
             }
         }
         P8SecurityCollector.exportPrincipalsToFiles(principalsJsonFile, principalsCsvFile);
-        P8SecurityCollector.exportOwnersToCsv(ownersJsonFile);
-
+        P8SecurityCollector.exportOwnersToCsv(ownersCsvFile);
+        P8SecurityCollector.exporPermissionsToCsv(permissionsCsvFile);
     }
 }

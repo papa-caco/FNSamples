@@ -241,4 +241,39 @@ public class ResultExporter {
         }
     }
 
+    public static void exportPermissionsToCsv(List<FnAccessPermission> fnAccessPermissions, String filePath) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(filePath);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            // Escribir encabezados
+            bufferedWriter.write("\"objectId\"|\"fnObjectType\"|\"granteeName\"|\"principalType\"|\"permissionSource\"|\"accessMask\"|\"accessType\"|\"inheritableDepth\"|\"status");
+            bufferedWriter.newLine();
+            // Escribir filas
+            for (FnAccessPermission fnAccessPermission: fnAccessPermissions) {
+                String objectId = fnAccessPermission.getObjectId() ;
+                String fnObjectType = fnAccessPermission.getFnObjectType().toString();
+                String granteeName = fnAccessPermission.getGranteeName();
+                String principalType = fnAccessPermission.getPrincipalType().toString();
+                int permissionSource = fnAccessPermission.getPermissionSource();
+                int accessMask = fnAccessPermission.getAccessMask();
+                int accessType = fnAccessPermission.getAccessType();
+                int inheritableDepth = fnAccessPermission.getInheritableDepth();
+                char status = fnAccessPermission.getStatus();
+                String line = String.format("\"%s\"|\"%s\"|\"%s\"|\"%s\"|\"%d\"|\"%d\"|\"%d\"|\"%d\"|\"%s\"",
+                        objectId, fnObjectType, granteeName, principalType, permissionSource, accessMask, accessType, inheritableDepth, status);
+                bufferedWriter.write(line);
+                bufferedWriter.newLine();
+            }
+            logger.info(String.format("Exported %d Access Permissions to %s", fnAccessPermissions.size(), filePath));
+        }
+    }
+String objectId;
+FnObjectType fnObjectType;
+String granteeName;
+PrincipalType principalType;
+int permissionSource;
+int accessMask;
+int accessType;
+int inheritableDepth;
+char status;
+
 }

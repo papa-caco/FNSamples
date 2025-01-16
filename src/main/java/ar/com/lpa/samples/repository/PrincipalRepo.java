@@ -10,7 +10,6 @@ import ar.com.lpa.samples.util.P8Logger;
 import ar.com.lpa.samples.util.Utilities;
 import com.filenet.api.collection.AccessPermissionList;
 import com.filenet.api.security.AccessPermission;
-import com.filenet.api.security.Permission;
 import lombok.Getter;
 import org.apache.log4j.Logger;
 
@@ -51,7 +50,21 @@ public class PrincipalRepo {
 		}
 	}
 
-	private void addNewPrincipalFromDn(String dN, String type, P8Realm p8realm)
+	public void addPrincipalFromPermission(AccessPermission permission, P8Realm p8realm) {
+		String principalType = permission.get_GranteeType().toString();
+		if (principalType.equals("USER") || principalType.equals("GROUP")) {
+			if (permission.get_GranteeName().contains("@")) {
+				String shortName = Utilities.extractShortName(permission.get_GranteeName());
+				this.addNewPrincipalFromShortName(shortName, principalType, p8realm);
+
+			} else {
+				this.addNewPrincipalFromDn(permission.get_GranteeName(), principalType, p8realm);
+			}
+		}
+		P8Logger.logPermisionValues(logger, permission);
+	}
+
+	public void addNewPrincipalFromDn(String dN, String type, P8Realm p8realm)
     {
     	if (!existsPrincipalDn(dN)) {
     		Principal principal = new Principal();
@@ -68,7 +81,7 @@ public class PrincipalRepo {
     	}
     }
     
-    private void addNewPrincipalFromShortName(String shortName, String type, P8Realm p8realm)
+    public void addNewPrincipalFromShortName(String shortName, String type, P8Realm p8realm)
     {
     	if (!existsPrincipalShortName(shortName)) {
     		Principal principal = new Principal();

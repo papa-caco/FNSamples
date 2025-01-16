@@ -17,25 +17,23 @@ public class FnAccessPermission {
     private FnObjectType fnObjectType;
     private String granteeName;
     private PrincipalType principalType;
-    private PermissionSource permissionSource;
+    private int permissionSource;
     private int accessMask;
     private int accessType;
     private int inheritableDepth;
     private char status;
 
-    public FnAccessPermission constructFromAccessPermission(String objectId, FnObjectType fnObjectType, AccessPermission accessPermission)
+    public FnAccessPermission(String objectId, FnObjectType fnObjectType, AccessPermission accessPermission)
     {
-        FnAccessPermission fnAccessPermission = new FnAccessPermission();
-        fnAccessPermission.setObjectId(objectId);
-        fnAccessPermission.setFnObjectType(fnObjectType);
-        fnAccessPermission.setGranteeName(accessPermission.get_GranteeName());
-        fnAccessPermission.setPrincipalType(PrincipalType.valueOf(accessPermission.get_GranteeType().toString()));
-        fnAccessPermission.setPermissionSource(accessPermission.get_PermissionSource());
-        fnAccessPermission.setAccessMask(accessPermission.get_AccessMask());
-        fnAccessPermission.setAccessType(accessPermission.get_AccessType().getValue());
-        fnAccessPermission.setInheritableDepth(accessPermission.get_InheritableDepth());
-        fnAccessPermission.setStatus('N');
-        return fnAccessPermission;
+        this.setObjectId(objectId);
+        this.setFnObjectType(fnObjectType);
+        this.setGranteeName(accessPermission.get_GranteeName());
+        this.setPrincipalType(PrincipalType.valueOf(accessPermission.get_GranteeType().toString()));
+        this.setPermissionSource(accessPermission.get_PermissionSource().getValue());
+        this.setAccessMask(accessPermission.get_AccessMask());
+        this.setAccessType(accessPermission.get_AccessType().getValue());
+        this.setInheritableDepth(accessPermission.get_InheritableDepth());
+        this.setStatus('N');
     }
 
 }
