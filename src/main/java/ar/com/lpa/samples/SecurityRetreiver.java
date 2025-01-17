@@ -6,6 +6,9 @@ import ar.com.lpa.samples.repository.FnDbTableRepo;
 import ar.com.lpa.samples.util.*;
 import org.apache.log4j.Logger;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import java.io.IOException;
 
 public class SecurityRetreiver {
@@ -14,6 +17,8 @@ public class SecurityRetreiver {
     private static final FnDbTableRepo fnDbTableRepo = new FnDbTableRepo();
 
     public static void main(String[] args) throws IOException {
+        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("db");
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         String configPath = "config.properties";
         ConfigLoader configLoader = new ConfigLoader(configPath);
         // Load attribute values from configuration file
@@ -136,6 +141,6 @@ public class SecurityRetreiver {
         }
         P8SecurityCollector.exportPrincipalsToFiles(principalsJsonFile, principalsCsvFile);
         P8SecurityCollector.exportOwnersToCsv(ownersCsvFile);
-        P8SecurityCollector.exporPermissionsToCsv(permissionsCsvFile);
+        P8SecurityCollector.exportPermissionsToCsv(permissionsCsvFile);
     }
 }

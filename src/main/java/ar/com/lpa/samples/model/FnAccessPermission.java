@@ -2,25 +2,57 @@ package ar.com.lpa.samples.model;
 
 
 import com.filenet.api.constants.AccessType;
-import com.filenet.api.constants.AccessLevel;
 import com.filenet.api.constants.PermissionSource;
 
 
 import com.filenet.api.security.AccessPermission;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+
+import javax.persistence.*;
 
 @Getter
-@Setter
+@Setter(AccessLevel.PUBLIC)
+@Entity(name = "FnAccessPermission")
+@Table(name = "FnAccessPermission")
+@RequiredArgsConstructor
+@NoArgsConstructor
 public class FnAccessPermission {
+    @Id
+    @GeneratedValue
+    @Column(name = "idFnAccessPermission")
+    private int idFnAccessPermission;
+
+    @Column(name = "objectId")
+    @NonNull
     private String objectId;
+
+    @Column(name = "fnObjectType")
+    @NonNull
+    @Enumerated(EnumType.STRING)
     private FnObjectType fnObjectType;
+
+    @Column(name = "granteeName")
+    @NonNull
     private String granteeName;
+
+    @Column(name = "principalType")
+    @NonNull
+    @Enumerated(EnumType.STRING)
     private PrincipalType principalType;
+
+    @Column(name = "permissionSource")
     private int permissionSource;
+
+    @Column(name = "accessMask")
     private int accessMask;
+
+    @Column(name = "accessType")
     private int accessType;
+
+    @Column(name = "inheritableDepth")
     private int inheritableDepth;
+
+    @Column(name = "status")
     private char status;
 
     public FnAccessPermission(String objectId, FnObjectType fnObjectType, AccessPermission accessPermission)

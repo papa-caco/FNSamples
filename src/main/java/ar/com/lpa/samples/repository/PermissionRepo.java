@@ -8,16 +8,75 @@ import java.util.ArrayList;
 import java.util.List;
 
 import lombok.Getter;
-import org.apache.log4j.Logger;
+import org.uqbarproject.jpa.java8.extras.WithGlobalEntityManager;
+
+import javax.persistence.PersistenceException;
 
 @Getter
-public class PermissionRepo {
+public class PermissionRepo  implements WithGlobalEntityManager {
 
-    private final List<FnAccessPermission> fnAccessPermissions = new ArrayList<>();
-    private static final Logger logger = Logger.getLogger(PrincipalRepo.class);
+    private static PermissionRepo instance = null;
+
+    private PermissionRepo(){
+    }
+
+    public static PermissionRepo getInstance(){
+        if (instance == null) {
+            instance = new PermissionRepo();
+        }
+        return instance;
+    }
+
+    public List<FnAccessPermission> getFnAccessPermissions(){
+        return entityManager().createQuery("from FnAccessPermission").getResultList();
+    }
 
     public void addPermissionsFromFnObject(String objectId, FnObjectType fnObjectType,AccessPermission permission){
-        fnAccessPermissions.add(new FnAccessPermission(objectId, fnObjectType, permission));
+        this.createFnAccessPermission(new FnAccessPermission(objectId, fnObjectType, permission));
+    }
+
+    private void createFnAccessPermission(FnAccessPermission fnAccessPermission){
+        try {
+            entityManager().getTransaction().begin();
+            entityManager().persist(fnAccessPermission);
+            entityManager().getTransaction().commit();
+        } catch (PersistenceException e) {
+            //e.printStackTrace();
+            entityManager().getTransaction().rollback();
+            throw new RuntimeException("An error has occurred persisting a new FnAccessPermission, the operation cannot be completed", e);
+        } finally {
+            entityManager().close();
+        }
+    }
+
+    private void updateFnAccessPermission(FnAccessPermission fnAccessPermission){
+        try {
+            entityManager().getTransaction().begin();
+            int id = entityManager().merge(fnAccessPermission).getIdFnAccessPermission();
+            fnAccessPermission.setIdFnAccessPermission(id);
+            entityManager().getTransaction().commit();
+        }
+        catch (PersistenceException e) {
+            //e.printStackTrace();
+            entityManager().getTransaction().rollback();
+            throw new RuntimeException("An error has occurred updating FnAccessPermission, the operation cannot be completed", e);
+        }
+        finally {
+            entityManager().close();
+        }
+    }
+
+    private void deleteFnAccessPermission(FnAccessPermission fnAccessPermission){
+        try {
+            entityManager().remove(fnAccessPermission);
+        } catch (PersistenceException e) {
+            //e.printStackTrace();
+            entityManager().getTransaction().rollback();
+            throw new RuntimeException("An error has occurred removing FnAccessPermission, the operation cannot be completed", e);
+        }
+        finally {
+            entityManager().close();
+        }
     }
 
 }
