@@ -1,6 +1,7 @@
 package ar.com.lpa.samples.util;
 
 import ar.com.lpa.samples.model.FnObjectType;
+import ar.com.lpa.samples.model.PrincipalType;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
 import ar.com.lpa.samples.repository.OwnerRepo;
 import ar.com.lpa.samples.repository.PermissionRepo;
@@ -48,6 +49,8 @@ public class P8SecurityCollector
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
+                                    /*System.out.println(permission.get_GranteeName() + " - " + permission.get_GranteeType().toString() + " - " + permission.get_PermissionSource().getValue()
+                                            + " - " + permission.get_AccessMask() + " - " + permission.get_AccessType().getValue() + " - " + permission.get_InheritableDepth());*/
                                     principalRepo.addPrincipalFromPermission(permission,p8realm);
                                     PermissionRepo.getInstance().addPermissionsFromFnObject(document.get_Id().toString(), FnObjectType.DOCUMENT, permission);
                                 } while (it1.hasNext());

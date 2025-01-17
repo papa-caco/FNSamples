@@ -2,5 +2,5 @@ package ar.com.lpa.samples.model;
 
 public enum PrincipalType 
 {
-	USER,GROUP;
+	USER, GROUP, UNKNOWN;
 }
