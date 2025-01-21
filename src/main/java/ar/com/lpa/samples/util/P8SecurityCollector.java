@@ -1,7 +1,7 @@
 package ar.com.lpa.samples.util;
 
 import ar.com.lpa.samples.model.FnObjectType;
-import ar.com.lpa.samples.model.PrincipalType;
+import ar.com.lpa.samples.model.Principal;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
 import ar.com.lpa.samples.repository.OwnerRepo;
 import ar.com.lpa.samples.repository.PermissionRepo;
@@ -19,13 +19,13 @@ import com.filenet.api.sweep.CmSweepPolicy;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class P8SecurityCollector
 {
 	private static final Logger logger = Logger.getLogger(P8SecurityCollector.class);
-    private static final PrincipalRepo principalRepo = new PrincipalRepo();
-
 
     public static void collectSecurityFromDocuments(P8Realm p8realm, String osName, String documentSearch) {
         if (documentSearch == null){
@@ -41,8 +41,10 @@ public class P8SecurityCollector
                     do {
                         count++;
                         Document document = (Document) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(document.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromDocument(document);
+                        //System.out.println(document.get_Owner() + " - " +  document.get_Id().toString());
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(document.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(document.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromDocument(document, owner);
                         P8Logger.logDocumentProperties(logger, document, count);
                         if (!(document.get_Permissions().isEmpty())) {
                             Iterator it1 = document.get_Permissions().iterator();
@@ -51,8 +53,10 @@ public class P8SecurityCollector
                                     AccessPermission permission = (AccessPermission) it1.next();
                                     /*System.out.println(permission.get_GranteeName() + " - " + permission.get_GranteeType().toString() + " - " + permission.get_PermissionSource().getValue()
                                             + " - " + permission.get_AccessMask() + " - " + permission.get_AccessType().getValue() + " - " + permission.get_InheritableDepth());*/
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(document.get_Id().toString(), FnObjectType.DOCUMENT, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    //System.out.println("SARASA 2 -->> " + granteeName);
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(document.get_Id().toString(), FnObjectType.DOCUMENT, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -81,16 +85,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         CustomObject customObject = (CustomObject) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(customObject.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromCustomObject(customObject);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(customObject.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(customObject.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromCustomObject(customObject, owner);
                         P8Logger.logCustomObjectProperties(logger, customObject, count);
                         if (!(customObject.get_Permissions().isEmpty())) {
                             Iterator it1 = customObject.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(customObject.get_Id().toString(), FnObjectType.CUSTOM_OBJECT, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(customObject.get_Id().toString(), FnObjectType.CUSTOM_OBJECT, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -119,16 +125,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         Folder folder = (Folder) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(folder.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromFolder(folder);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(folder.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(folder.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromFolder(folder, owner);
                         P8Logger.logFolderProperties(logger, folder, count);
                         if (!(folder.get_Permissions().isEmpty())) {
                             Iterator it1 = folder.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(folder.get_Id().toString(), FnObjectType.FOLDER, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(folder.get_Id().toString(), FnObjectType.FOLDER, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -157,16 +165,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         ClassDefinition classDefinition = (ClassDefinition) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(classDefinition.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromClassDefinition(classDefinition);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(classDefinition.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(classDefinition.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromClassDefinition(classDefinition, owner);
                         P8Logger.logClassProperties(logger, classDefinition, count);
                         if (!(classDefinition.get_Permissions().isEmpty())) {
                             Iterator it1 = classDefinition.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(classDefinition.get_Id().toString(), FnObjectType.CLASS_DEFINITION, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(classDefinition.get_Id().toString(), FnObjectType.CLASS_DEFINITION, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -175,8 +185,9 @@ public class P8SecurityCollector
                             if (it2.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it2.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(classDefinition.get_Id().toString(), FnObjectType.CLASS_DEFINITION_DI, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(classDefinition.get_Id().toString(), FnObjectType.CLASS_DEFINITION_DI, granteeName, permission);
                                 } while (it2.hasNext());
                             }
                         }
@@ -205,16 +216,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         Annotation annotation = (Annotation) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(annotation.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromAnnotation(annotation);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(annotation.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(annotation.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromAnnotation(annotation, owner);
                         P8Logger.logAnnotationProperties(logger, annotation, count);
                         if (!(annotation.get_Permissions().isEmpty())) {
                             Iterator it1 = annotation.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(annotation.get_Id().toString(), FnObjectType.ANNOTATION, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(annotation.get_Id().toString(), FnObjectType.ANNOTATION, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -243,16 +256,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         PropertyTemplate propertyTemplate= (PropertyTemplate) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(propertyTemplate.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromPropertyTemplate(propertyTemplate);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(propertyTemplate.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(propertyTemplate.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromPropertyTemplate(propertyTemplate, owner);
                         P8Logger.logPropertyTemplatesProperties(logger, propertyTemplate, count);
                         if (!(propertyTemplate.get_Permissions().isEmpty())) {
                             Iterator it1 = propertyTemplate.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(propertyTemplate.get_Id().toString(), FnObjectType.PROPERTY_TEMPLATE, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(propertyTemplate.get_Id().toString(), FnObjectType.PROPERTY_TEMPLATE, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -281,16 +296,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         ChoiceList choiceList = (ChoiceList) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(choiceList.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromChoiceList(choiceList);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(choiceList.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(choiceList.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromChoiceList(choiceList, owner);
                         P8Logger.logChoiceListProperties(logger, choiceList, count);
                         if (!(choiceList.get_Permissions().isEmpty())) {
                             Iterator it1 = choiceList.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(choiceList.get_Id().toString(), FnObjectType.CHOICE_LIST, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(choiceList.get_Id().toString(), FnObjectType.CHOICE_LIST, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -319,16 +336,18 @@ public class P8SecurityCollector
                     do{
                         count++;
                         Event event = (Event) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(event.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromEvent(event);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(event.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(event.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromEvent(event, owner);
                         P8Logger.logEventProperties(logger, event, count);
                         if (!(event.get_Permissions().isEmpty())) {
                             Iterator it1 = event.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(event.get_Id().toString(), FnObjectType.EVENT, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(event.get_Id().toString(), FnObjectType.EVENT, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -357,16 +376,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         StoragePolicy storagePolicy = (StoragePolicy) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(storagePolicy.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromStoragePolicy(storagePolicy);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(storagePolicy.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(storagePolicy.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromStoragePolicy(storagePolicy, owner);
                         P8Logger.logStoragePolicyProperties(logger, storagePolicy, count);
                         if (!(storagePolicy.get_Permissions().isEmpty())) {
                             Iterator it1 = storagePolicy.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(storagePolicy.get_Id().toString(), FnObjectType.STORAGE_POLICY, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(storagePolicy.get_Id().toString(), FnObjectType.STORAGE_POLICY, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -395,16 +416,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         StorageArea storageArea = (StorageArea) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(storageArea.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromStorageArea(storageArea);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(storageArea.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(storageArea.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromStorageArea(storageArea, owner);
                         P8Logger.logStorageAreaProperties(logger, storageArea, count);
                         if (!(storageArea.get_Permissions().isEmpty())) {
                             Iterator it1 = storageArea.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(storageArea.get_Id().toString(), FnObjectType.STORAGE_AREA, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(storageArea.get_Id().toString(), FnObjectType.STORAGE_AREA, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -433,16 +456,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         SecurityPolicy securityPolicy = (SecurityPolicy) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(securityPolicy.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromSecurityPolicy(securityPolicy);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(securityPolicy.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(securityPolicy.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromSecurityPolicy(securityPolicy, owner);
                         P8Logger.logSecurityPolicyProperties(logger, securityPolicy, count);
                         if (!(securityPolicy.get_Permissions().isEmpty())) {
                             Iterator it1 = securityPolicy.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(securityPolicy.get_Id().toString(), FnObjectType.SECURITY_POLICY, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(securityPolicy.get_Id().toString(), FnObjectType.SECURITY_POLICY, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -459,8 +484,9 @@ public class P8SecurityCollector
                                         if (it3.hasNext()) {
                                             do {
                                                 AccessPermission permission = (AccessPermission) it3.next();
-                                                principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                                PermissionRepo.getInstance().addPermissionsFromFnObject(securityTemplate.get_Id().toString(), FnObjectType.SECURITY_TEMPLATE, permission);
+                                                PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                                Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                                PermissionRepo.getInstance().addPermissionsFromFnObject(securityTemplate.get_Id().toString(), FnObjectType.SECURITY_TEMPLATE, granteeName, permission);
                                             } while (it3.hasNext());
                                         }
                                     }
@@ -480,8 +506,8 @@ public class P8SecurityCollector
 
     public static void collectSecurityFromSubscriptions(P8Realm p8realm,String osName, String subscriptionSearch) {
         if (subscriptionSearch == null) {
+            subscriptionSearch = "Select * FROM Subscription where Id IS NOT NULL";
         }
-        subscriptionSearch = "Select * FROM Subscription where Id IS NOT NULL";
         try{
             logger.info(String.format("Collecting Principals from Subscriptions - Object Store: %s", osName));
             IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, subscriptionSearch);
@@ -492,16 +518,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         Subscription subscription = (Subscription) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(subscription.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromSubscription(subscription);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(subscription.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(subscription.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromSubscription(subscription, owner);
                         P8Logger.logSubscriptionProperties(logger, subscription, count);
                         if (!(subscription.get_Permissions().isEmpty())) {
                             Iterator it1 = subscription.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(subscription.get_Id().toString(), FnObjectType.SUBSCRIPTION, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(subscription.get_Id().toString(), FnObjectType.SUBSCRIPTION, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -530,16 +558,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         CmSweep sweep = (CmSweep) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(sweep.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromSweep(sweep);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(sweep.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(sweep.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromSweep(sweep, owner);
                         P8Logger.logSweepProperties(logger, sweep, count);
                         if (!(sweep.get_Permissions().isEmpty())) {
                             Iterator it1 = sweep.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(sweep.get_Id().toString(), FnObjectType.SWEEP, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(sweep.get_Id().toString(), FnObjectType.SWEEP, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -568,16 +598,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         CmSweepPolicy sweepPolicy = (CmSweepPolicy) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(sweepPolicy.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromSweepPolicy(sweepPolicy);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(sweepPolicy.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(sweepPolicy.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromSweepPolicy(sweepPolicy, owner);
                         P8Logger.logSweepPolicyProperties(logger, sweepPolicy, count);
                         if (!(sweepPolicy.get_Permissions().isEmpty())) {
                             Iterator it1 = sweepPolicy.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(sweepPolicy.get_Id().toString(), FnObjectType.SWEEP_POLICY, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(sweepPolicy.get_Id().toString(), FnObjectType.SWEEP_POLICY, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -604,16 +636,18 @@ public class P8SecurityCollector
                     do {
                         count++;
                         TableDefinition tableDefinition = (TableDefinition) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(tableDefinition.get_Owner(), p8realm);
-                        OwnerRepo.getInstance().addOwnerFromTableDefinition(tableDefinition);
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(tableDefinition.get_Owner(), p8realm);
+                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(tableDefinition.get_Owner());
+                        OwnerRepo.getInstance().addOwnerFromTableDefinition(tableDefinition, owner);
                         P8Logger.logTableDefinitionProperties(logger, tableDefinition, count);
                         if (!(tableDefinition.get_Permissions().isEmpty())) {
                             Iterator it1 = tableDefinition.get_Permissions().iterator();
                             if (it1.hasNext()) {
                                 do {
                                     AccessPermission permission = (AccessPermission) it1.next();
-                                    principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(tableDefinition.get_Id().toString(), FnObjectType.TABLE_DEFINITION, permission);
+                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                    PermissionRepo.getInstance().addPermissionsFromFnObject(tableDefinition.get_Id().toString(), FnObjectType.TABLE_DEFINITION, granteeName, permission);
                                 } while (it1.hasNext());
                             }
                         }
@@ -641,8 +675,9 @@ public class P8SecurityCollector
                         do {
                             count++;
                             CmAbstractPersistable cmAbstractPersistable = (CmAbstractPersistable) it.next();
-                            principalRepo.addPrincipalFromObjectOwner(cmAbstractPersistable.get_Owner(), p8realm);
-                            OwnerRepo.getInstance().addOwnerFromAbstractPersistable(cmAbstractPersistable, abstractPersistableType);
+                            PrincipalRepo.getInstance().addPrincipalFromObjectOwner(cmAbstractPersistable.get_Owner(), p8realm);
+                            Principal owner = PrincipalRepo.getInstance().getPrincipalByName(cmAbstractPersistable.get_Owner());
+                            OwnerRepo.getInstance().addOwnerFromAbstractPersistable(cmAbstractPersistable, abstractPersistableType, owner);
                             P8Logger.logAbstractPersistableProperties(logger, cmAbstractPersistable, count);
                             if (!(cmAbstractPersistable.get_Permissions().isEmpty())) {
                                 Iterator it1 = cmAbstractPersistable.get_Permissions().iterator();
@@ -664,8 +699,9 @@ public class P8SecurityCollector
                                                 break;
                                         }
                                         AccessPermission permission = (AccessPermission) it1.next();
-                                        principalRepo.addPrincipalFromPermission(permission,p8realm);
-                                        PermissionRepo.getInstance().addPermissionsFromFnObject(cmAbstractPersistable.get_Id().toString(), fnObjectType, permission);
+                                        PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
+                                        Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                                        PermissionRepo.getInstance().addPermissionsFromFnObject(cmAbstractPersistable.get_Id().toString(), fnObjectType, granteeName, permission);
                                     } while (it1.hasNext());
                                 }
                             }
@@ -682,9 +718,10 @@ public class P8SecurityCollector
     }
 
     public static void exportPrincipalsToFiles(String principalsJsonFile, String principalsCsvFile)  throws IOException {
-            principalRepo.getPrincipals().sort(new PrincipalComparator());
-        ResultExporter.exportPrincipalCollectionToJsonfile(principalRepo.getPrincipals(), principalsJsonFile);
-        ResultExporter.exportPrincipalsToCsv(principalRepo.getPrincipals(), principalsCsvFile);
+        List<Principal> principals = new ArrayList<>(PrincipalRepo.getInstance().getPrincipals());
+        principals.sort(new PrincipalComparator());
+        ResultExporter.exportPrincipalCollectionToJsonfile(principals, principalsJsonFile);
+        ResultExporter.exportPrincipalsToCsv(principals, principalsCsvFile);
     }
 
     public static void exportOwnersToCsv(String csvFile) throws IOException {

@@ -31,9 +31,9 @@ public class FnAccessPermission {
     @Enumerated(EnumType.STRING)
     private FnObjectType fnObjectType;
 
-    @Column(name = "granteeName")
-    @NonNull
-    private String granteeName;
+    @JoinColumn(name ="idPrincipal")
+    @ManyToOne(cascade = CascadeType.MERGE)
+    private Principal granteeName;
 
     @Column(name = "principalType")
     @NonNull
@@ -55,17 +55,17 @@ public class FnAccessPermission {
     @Column(name = "status")
     private char status;
 
-    public FnAccessPermission(String objectId, FnObjectType fnObjectType, AccessPermission accessPermission)
+    public FnAccessPermission(String objectId, FnObjectType fnObjectType, Principal granteeName, AccessPermission accessPermission)
     {
-        this.setObjectId(objectId);
-        this.setFnObjectType(fnObjectType);
-        this.setGranteeName(accessPermission.get_GranteeName());
-        this.setPrincipalType(PrincipalType.valueOf(accessPermission.get_GranteeType().toString()));
-        this.setPermissionSource(accessPermission.get_PermissionSource().getValue());
-        this.setAccessMask(accessPermission.get_AccessMask());
-        this.setAccessType(accessPermission.get_AccessType().getValue());
-        this.setInheritableDepth(accessPermission.get_InheritableDepth());
-        this.setStatus('N');
+        this.objectId = objectId;
+        this.fnObjectType = fnObjectType;
+        this.granteeName = granteeName;
+        this.principalType = PrincipalType.valueOf(accessPermission.get_GranteeType().toString());
+        this.permissionSource = accessPermission.get_PermissionSource().getValue();
+        this.accessMask = accessPermission.get_AccessMask();
+        this.accessType = accessPermission.get_AccessType().getValue();
+        this.inheritableDepth = accessPermission.get_InheritableDepth();
+        this.status = 'N';
     }
 
 }

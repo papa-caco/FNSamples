@@ -2,6 +2,7 @@ package ar.com.lpa.samples.repository;
 
 import ar.com.lpa.samples.model.FnObjectType;
 import ar.com.lpa.samples.model.FnOwner;
+import ar.com.lpa.samples.model.Principal;
 import com.filenet.api.admin.*;
 import com.filenet.api.core.*;
 import com.filenet.api.events.Event;
@@ -35,67 +36,67 @@ public class OwnerRepo implements WithGlobalEntityManager {
         return instance;
     }
 
-    public void addOwnerFromAnnotation(Annotation annotation){
-        this.createFnOwner(new FnOwner(FnObjectType.ANNOTATION,annotation.get_Id().toString(), annotation.get_Owner()));
+    public void addOwnerFromAnnotation(Annotation annotation, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.ANNOTATION,annotation.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromChoiceList(ChoiceList choiceList){
-        this.createFnOwner(new FnOwner(FnObjectType.CHOICE_LIST, choiceList.get_Id().toString(), choiceList.get_Owner()));
+    public void addOwnerFromChoiceList(ChoiceList choiceList, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.CHOICE_LIST, choiceList.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromClassDefinition(ClassDefinition classDefinition){
-        this.createFnOwner(new FnOwner(FnObjectType.CLASS_DEFINITION, classDefinition.get_Id().toString(), classDefinition.get_Owner()));
+    public void addOwnerFromClassDefinition(ClassDefinition classDefinition, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.CLASS_DEFINITION, classDefinition.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromCustomObject(CustomObject customObject){
-        this.createFnOwner(new FnOwner(FnObjectType.CUSTOM_OBJECT, customObject.get_Id().toString(), customObject.get_Owner()));
+    public void addOwnerFromCustomObject(CustomObject customObject, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.CUSTOM_OBJECT, customObject.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromDocument(Document document){
-        this.createFnOwner(new FnOwner(FnObjectType.DOCUMENT, document.get_Id().toString(), document.get_Owner()));
+    public void addOwnerFromDocument(Document document, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.DOCUMENT, document.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromEvent(Event event){
-        this.createFnOwner(new FnOwner(FnObjectType.EVENT, event.get_Id().toString(), event.get_Owner()));
+    public void addOwnerFromEvent(Event event, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.EVENT, event.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromFolder(Folder folder){
-        this.createFnOwner(new FnOwner(FnObjectType.FOLDER, folder.get_Id().toString(), folder.get_Owner()));
+    public void addOwnerFromFolder(Folder folder, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.FOLDER, folder.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromPropertyTemplate(PropertyTemplate propertyTemplate){
-        this.createFnOwner(new FnOwner(FnObjectType.PROPERTY_TEMPLATE, propertyTemplate.get_Id().toString(), propertyTemplate.get_Owner()));
+    public void addOwnerFromPropertyTemplate(PropertyTemplate propertyTemplate, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.PROPERTY_TEMPLATE, propertyTemplate.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromStoragePolicy(StoragePolicy storagePolicy){
-        this.createFnOwner(new FnOwner(FnObjectType.STORAGE_POLICY, storagePolicy.get_Id().toString(), storagePolicy.get_Owner()));
+    public void addOwnerFromStoragePolicy(StoragePolicy storagePolicy, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.STORAGE_POLICY, storagePolicy.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromStorageArea(StorageArea storageArea){
-        this.createFnOwner(new FnOwner(FnObjectType.STORAGE_AREA, storageArea.get_Id().toString(), storageArea.get_Owner()));
+    public void addOwnerFromStorageArea(StorageArea storageArea, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.STORAGE_AREA, storageArea.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromSecurityPolicy(SecurityPolicy securityPolicy){
-        this.createFnOwner(new FnOwner(FnObjectType.SECURITY_POLICY, securityPolicy.get_Id().toString(), securityPolicy.get_Owner()));
+    public void addOwnerFromSecurityPolicy(SecurityPolicy securityPolicy, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.SECURITY_POLICY, securityPolicy.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromSubscription(Subscription subscription){
-        this.createFnOwner(new FnOwner(FnObjectType.SUBSCRIPTION, subscription.get_Id().toString(), subscription.get_Owner()));
+    public void addOwnerFromSubscription(Subscription subscription, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.SUBSCRIPTION, subscription.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromSweep(CmSweep sweep){
-        this.createFnOwner(new FnOwner(FnObjectType.SWEEP, sweep.get_Id().toString(), sweep.get_Owner()));
+    public void addOwnerFromSweep(CmSweep sweep, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.SWEEP, sweep.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromSweepPolicy(CmSweepPolicy sweepPolicy){
-        this.createFnOwner(new FnOwner(FnObjectType.SWEEP_POLICY, sweepPolicy.get_Id().toString(), sweepPolicy.get_Owner()));
+    public void addOwnerFromSweepPolicy(CmSweepPolicy sweepPolicy, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.SWEEP_POLICY, sweepPolicy.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromTableDefinition(TableDefinition tableDefinition){
-        this.createFnOwner(new FnOwner(FnObjectType.TABLE_DEFINITION, tableDefinition.get_Id().toString(), tableDefinition.get_Owner()));
+    public void addOwnerFromTableDefinition(TableDefinition tableDefinition, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.TABLE_DEFINITION, tableDefinition.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromAbstractPersistable(CmAbstractPersistable abstractPersistable, String abstractPersistableType){
+    public void addOwnerFromAbstractPersistable(CmAbstractPersistable abstractPersistable, String abstractPersistableType, Principal owner){
         FnObjectType fnObjectType = null;
         switch (abstractPersistableType) {
             case "ClbDownloadRecord":
@@ -111,7 +112,7 @@ public class OwnerRepo implements WithGlobalEntityManager {
                 fnObjectType = FnObjectType.ABSTRACT_PERSISTABLE;
                 break;
         }
-        this.createFnOwner(new FnOwner(fnObjectType, abstractPersistable.get_Id().toString(), abstractPersistable.get_Owner()));
+        this.createFnOwner(new FnOwner(fnObjectType, abstractPersistable.get_Id().toString(), owner));
     }
 
     private void createFnOwner(FnOwner fnOwner){
@@ -169,7 +170,7 @@ public class OwnerRepo implements WithGlobalEntityManager {
 
     public List<FnOwner> findFnOwnersByOwner(String owner) {
         return this.getFnOwners().stream()
-                .filter(fnOwner -> fnOwner.getSourceOwner().equals(owner))
+                .filter(fnOwner -> fnOwner.getOwner().equals(owner))
                 .collect(Collectors.toList());
     }
 

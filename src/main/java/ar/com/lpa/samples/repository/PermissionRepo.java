@@ -2,9 +2,9 @@ package ar.com.lpa.samples.repository;
 
 import ar.com.lpa.samples.model.FnAccessPermission;
 import ar.com.lpa.samples.model.FnObjectType;
+import ar.com.lpa.samples.model.Principal;
 import com.filenet.api.security.AccessPermission;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import lombok.Getter;
@@ -31,8 +31,11 @@ public class PermissionRepo  implements WithGlobalEntityManager {
         return entityManager().createQuery("from FnAccessPermission").getResultList();
     }
 
-    public void addPermissionsFromFnObject(String objectId, FnObjectType fnObjectType,AccessPermission permission){
-        this.createFnAccessPermission(new FnAccessPermission(objectId, fnObjectType, permission));
+    public void addPermissionsFromFnObject(String objectId, FnObjectType fnObjectType, Principal granteeName, AccessPermission permission){
+        FnAccessPermission fnAccessPermission = new FnAccessPermission(objectId, fnObjectType, granteeName, permission);
+        //System.out.println("SARASA 2.1 -->> " + fnAccessPermission.getObjectId());
+        this.createFnAccessPermission(fnAccessPermission);
+        //System.out.println("SARASA 2.2");
     }
 
     private void createFnAccessPermission(FnAccessPermission fnAccessPermission){

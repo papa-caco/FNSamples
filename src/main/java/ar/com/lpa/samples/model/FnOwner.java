@@ -26,19 +26,17 @@ public class FnOwner {
     @Enumerated(EnumType.STRING)
     private FnObjectType fnObjectType;
 
-    @Column(name = "sourceOwner")
-    private String sourceOwner;
-
-    @Column(name = "destOwner")
-    private String destinationOwner;
+    @JoinColumn(name ="idPrincipal")
+    @ManyToOne(cascade = CascadeType.MERGE)
+    private Principal owner;
 
     @Column(name = "status")
     private char status;
 
-    public FnOwner(FnObjectType type, String objectId, String owner) {
+    public FnOwner(FnObjectType type, String objectId, Principal owner) {
         this.fnObjectType = type;
         this.objectId = objectId;
-        this.sourceOwner = owner;
+        this.owner = owner;
         this.status = 'N';
     }
 }
