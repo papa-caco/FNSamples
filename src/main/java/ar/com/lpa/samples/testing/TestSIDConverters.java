@@ -17,9 +17,7 @@ public class TestSIDConverters {
 		System.out.println("\n2) Convert String to Binary");
 		String siD = "S-1-5-21-2592625401-1541527055-4017201578-1287";
 		System.out.println("String SID: " + siD);
-		Byte[] binarySid = SIDConverters.convertStringSID(siD);
-		String result2 = SIDConverters.convertByteArrayToHexString(binarySid);
-		System.out.println("Binary SID: " + result2); 
+		System.out.println("Binary SID: " + SIDConverters.convertStringSIdToHexSId(siD));
 	}
 
 }

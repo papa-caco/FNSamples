@@ -6,10 +6,13 @@ import ar.com.lpa.samples.model.Principal;
 import com.filenet.api.admin.*;
 import com.filenet.api.core.*;
 import com.filenet.api.events.Event;
+import com.filenet.api.events.EventAction;
 import com.filenet.api.events.Subscription;
 import com.filenet.api.security.SecurityPolicy;
 import com.filenet.api.sweep.CmSweep;
 import com.filenet.api.sweep.CmSweepPolicy;
+import com.filenet.apiimpl.core.ActionConsumerImpl;
+import com.filenet.apiimpl.core.ActionImpl;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -80,8 +83,16 @@ public class OwnerRepo implements WithGlobalEntityManager {
         this.createFnOwner(new FnOwner(FnObjectType.SECURITY_POLICY, securityPolicy.get_Id().toString(), owner));
     }
 
-    public void addOwnerFromSubscription(Subscription subscription, Principal owner){
-        this.createFnOwner(new FnOwner(FnObjectType.SUBSCRIPTION, subscription.get_Id().toString(), owner));
+    public void addOwnerFromActionImpl(ActionImpl actionImpl, Principal owner, FnObjectType fnObjectType){
+        this.createFnOwner(new FnOwner(fnObjectType, actionImpl.get_Id().toString(), owner));
+    }
+
+    public void addOwnerFromRepositoryObject(EngineObject repositoryObject, Principal owner, FnObjectType fnObjectType){
+        this.createFnOwner(new FnOwner(fnObjectType, repositoryObject.getProperties().getIdValue("Id").toString(), owner));
+    }
+
+    public void addOwnerFromEventAction(ActionImpl eventAction, Principal owner){
+        this.createFnOwner(new FnOwner(FnObjectType.EVENT_ACTION, eventAction.get_Id().toString(), owner));
     }
 
     public void addOwnerFromSweep(CmSweep sweep, Principal owner){
@@ -116,46 +127,49 @@ public class OwnerRepo implements WithGlobalEntityManager {
     }
 
     private void createFnOwner(FnOwner fnOwner){
-        try {
-            entityManager().getTransaction().begin();
-            entityManager().persist(fnOwner);
-            entityManager().getTransaction().commit();
-        } catch (PersistenceException e) {
-            //e.printStackTrace();
-            entityManager().getTransaction().rollback();
-            throw new RuntimeException("An error has occurred persisting a new FnOwner, the operation cannot be completed", e);
-        } finally {
-            entityManager().close();
+        if (!existsOwnerForObjectId(fnOwner.getObjectId())){
+            try {
+                entityManager().getTransaction().begin();
+                entityManager().persist(fnOwner);
+                entityManager().getTransaction().commit();
+            } catch (PersistenceException e) {
+                //e.printStackTrace();
+                entityManager().getTransaction().rollback();
+                throw new RuntimeException("An error has occurred persisting a new FnOwner, the operation cannot be completed", e);
+            } finally {
+                entityManager().close();
+            }
         }
     }
 
     private void deleteFnOwner(FnOwner fnOwner){
-        try {
-            entityManager().remove(fnOwner);
-        } catch (PersistenceException e) {
-            //e.printStackTrace();
-            entityManager().getTransaction().rollback();
-            throw new RuntimeException("An error has occurred removing FnOwner, the operation cannot be completed", e);
-        }
-        finally {
-            entityManager().close();
+        if (existsOwnerForObjectId(fnOwner.getObjectId())) {
+            try {
+                entityManager().remove(fnOwner);
+            } catch (PersistenceException e) {
+                //e.printStackTrace();
+                entityManager().getTransaction().rollback();
+                throw new RuntimeException("An error has occurred removing FnOwner, the operation cannot be completed", e);
+            } finally {
+                entityManager().close();
+            }
         }
     }
 
     private void updateFnOwner(FnOwner fnOwner){
-        try {
-            entityManager().getTransaction().begin();
-            int id = entityManager().merge(fnOwner).getIdFnOwner();
-            fnOwner.setIdFnOwner(id);
-            entityManager().getTransaction().commit();
-        }
-        catch (PersistenceException e) {
-            //e.printStackTrace();
-            entityManager().getTransaction().rollback();
-            throw new RuntimeException("An error has occurred updating FnOwner, the operation cannot be completed", e);
-        }
-        finally {
-            entityManager().close();
+        if (existsOwnerForObjectId(fnOwner.getObjectId())) {
+            try {
+                entityManager().getTransaction().begin();
+                int id = entityManager().merge(fnOwner).getIdFnOwner();
+                fnOwner.setIdFnOwner(id);
+                entityManager().getTransaction().commit();
+            } catch (PersistenceException e) {
+                //e.printStackTrace();
+                entityManager().getTransaction().rollback();
+                throw new RuntimeException("An error has occurred updating FnOwner, the operation cannot be completed", e);
+            } finally {
+                entityManager().close();
+            }
         }
     }
 
@@ -182,6 +196,15 @@ public class OwnerRepo implements WithGlobalEntityManager {
 
     public int ownersAmountByFnObjectType(FnObjectType fnObjectType){
         return this.findFnOwnersByFnObjectType(fnObjectType).size();
+    }
+
+    private boolean existsOwnerForObjectId(String objectId){
+        for (FnOwner fnOwner : getFnOwners()) {
+            if (objectId.equals(fnOwner.getObjectId())) {
+                return false;
+            }
+        }
+        return false;
     }
 
 

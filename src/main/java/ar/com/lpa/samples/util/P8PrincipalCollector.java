@@ -1,519 +1,260 @@
 package ar.com.lpa.samples.util;
 
-import java.util.Iterator;
-
-import com.filenet.api.admin.*;
-import com.filenet.api.core.*;
-import com.filenet.api.events.Event;
-import com.filenet.api.events.Subscription;
-import com.filenet.api.security.SecurityPolicy;
-import com.filenet.api.security.SecurityTemplate;
-import com.filenet.api.collection.IndependentObjectSet;
-import com.filenet.api.sweep.CmSweep;
-import com.filenet.api.sweep.CmSweepPolicy;
-import org.apache.log4j.Logger;
-
+import ar.com.lpa.samples.model.FnObjectType;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
 import ar.com.lpa.samples.repository.PrincipalRepo;
+import com.filenet.api.collection.AccessPermissionList;
+import com.filenet.api.collection.IndependentObjectSet;
+import com.filenet.api.collection.SecurityTemplateList;
+import com.filenet.api.core.EngineObject;
+import com.filenet.api.security.AccessPermission;
+import org.apache.log4j.Logger;
+
+import java.util.Iterator;
 
 public class P8PrincipalCollector
 {
 	private static final Logger logger = Logger.getLogger(P8PrincipalCollector.class);
 
-    public static void collectPrincipalsFromDocuments(PrincipalRepo principalRepo, P8Realm p8realm, String osName, String documentSearch) {
+    public static void collectPrincipalsFromDocuments(P8Realm p8realm, String osName, String documentSearch) {
         if (documentSearch == null){
             documentSearch = "SELECT * FROM Document where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Documents - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,documentSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-				Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        Document document = (Document) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(document.get_Owner(), p8realm);
-                        P8Logger.logDocumentProperties(logger, document, count);
-                        if (!(document.get_Permissions().isEmpty())) {
-                            principalRepo.addPrincipalsFromPermissions(document.get_Permissions(), p8realm);
-                        }
-                    } while (it.hasNext()) ;
-                }
-                logger.info("Total Documents: " + count);
-            }
-            else logger.info("No documents were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, documentSearch, FnObjectType.DOCUMENT);
     }
 
-    public static void collectPrincipalsFromCustomObjects(PrincipalRepo principalRepo, P8Realm p8realm, String osName, String customObjectSearch) {
+    public static void collectPrincipalsFromCustomObjects(P8Realm p8realm, String osName, String customObjectSearch) {
         if (customObjectSearch == null){
             customObjectSearch = "SELECT * FROM CustomObject where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Custom Objects - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm, logger, osName, customObjectSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        CustomObject customObject = (CustomObject) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(customObject.get_Owner(), p8realm);
-                        P8Logger.logCustomObjectProperties(logger, customObject, count);
-                        if (!(customObject.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(customObject.get_Permissions(), p8realm);
-                    }  while (it.hasNext()) ;
-                }
-                logger.info("Total Custom Objects: " + count);
-            }
-            else logger.info("No custom objects were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, customObjectSearch, FnObjectType.CUSTOM_OBJECT);
     }
     
-    public static void collectPrincipalsFromFolders(PrincipalRepo principalRepo, P8Realm p8realm, String osName, String folderSearch) {
+    public static void collectPrincipalsFromFolders(P8Realm p8realm, String osName, String folderSearch) {
         if (folderSearch == null){
             folderSearch = "Select * FROM Folder where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Folders - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,folderSearch);
-            if(!(independentObjectSet.isEmpty())) {
-                int count = 0;
-                @SuppressWarnings("rawtypes")
-                Iterator it = independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        Folder folder = (Folder) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(folder.get_Owner(), p8realm);
-                        P8Logger.logFolderProperties(logger, folder, count);
-                        if (!(folder.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(folder.get_Permissions(), p8realm);
-                    } while (it.hasNext());
-                }
-                logger.info("Total Folders: " + count);
-            }
-            else logger.info("No folders were found!");
-        }
-        catch(Exception e) {
-                //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, folderSearch, FnObjectType.FOLDER);
     }
 
-    public static void collectPrincipalsFromClassDefinitions(PrincipalRepo principalRepo, P8Realm p8realm, String osName, String classSearch) {
+    public static void collectPrincipalsFromClassDefinitions(P8Realm p8realm, String osName, String classSearch) {
         if (classSearch == null){
             classSearch = "select * FROM ClassDefinition where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Class Definitions - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        ClassDefinition classDefinition = (ClassDefinition) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(classDefinition.get_Owner(), p8realm);
-                        P8Logger.logClassProperties(logger, classDefinition, count);
-                        if (!(classDefinition.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(classDefinition.get_Permissions(), p8realm);
-                        if (!(classDefinition.get_DefaultInstancePermissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(classDefinition.get_DefaultInstancePermissions(), p8realm);
-                    } while (it.hasNext());
-                }
-                logger.info("Total Class Definitions: " + count);
-            }
-            else logger.info("No Class Definitions were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, classSearch, FnObjectType.CLASS_DEFINITION);
     }
 
-    public static void collectPrincipalsFromAnnotations(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String annotationSearch) {
+    public static void collectPrincipalsFromAnnotations(P8Realm p8realm, String osName, String annotationSearch) {
         if (annotationSearch == null){
             annotationSearch = "Select * FROM Annotation where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Annotations - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,annotationSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()){
-                    do {
-                        count++;
-                        Annotation annotation = (Annotation) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(annotation.get_Owner(), p8realm);
-                        P8Logger.logAnnotationProperties(logger, annotation, count);
-                        if (!(annotation.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(annotation.get_Permissions(), p8realm);
-                    } while (it.hasNext());
-                }
-                logger.info("Total Annotations: " + count);
-            }
-            else logger.info("No Annotations were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, annotationSearch, FnObjectType.ANNOTATION);
     }
 
-    public static void collectPrincipalsFromPropertyTemplates(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String propertyTemplateSearch) {
+    public static void collectPrincipalsFromPropertyTemplates(P8Realm p8realm,String osName, String propertyTemplateSearch) {
         if (propertyTemplateSearch == null){
             propertyTemplateSearch = "Select * FROM PropertyTemplate where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Property Templates - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,propertyTemplateSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()){
-                    do {
-                        count++;
-                        PropertyTemplate propertyTemplate= (PropertyTemplate) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(propertyTemplate.get_Owner(), p8realm);
-                        P8Logger.logPropertyTemplatesProperties(logger, propertyTemplate, count);
-                        if (!(propertyTemplate.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(propertyTemplate.get_Permissions(), p8realm);
-                    } while (it.hasNext());
-                }
-                logger.info("Total Property Templates: " + count);
-            }
-            else logger.info("No Property Templates were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, propertyTemplateSearch, FnObjectType.PROPERTY_TEMPLATE);
     }
 
-    public static void collectPrincipalsFromChoiceLists(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String choiceListSearch) {
+    public static void collectPrincipalsFromChoiceLists(P8Realm p8realm,String osName, String choiceListSearch) {
         if (choiceListSearch == null){
             choiceListSearch = "Select * FROM ChoiceList where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Choice Lists - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,choiceListSearch);
-            if(!(independentObjectSet.isEmpty())) {
-                int count = 0;
-                @SuppressWarnings("rawtypes")
-                Iterator it = independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        ChoiceList choiceList = (ChoiceList) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(choiceList.get_Owner(), p8realm);
-                        P8Logger.logChoiceListProperties(logger, choiceList, count);
-                        if (!(choiceList.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(choiceList.get_Permissions(), p8realm);
-                    } while (it.hasNext());
-                }
-                logger.info("Total Choice Lists: " + count);
-            }
-            else logger.info("No Choice Lists were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, choiceListSearch, FnObjectType.CHOICE_LIST);
     }
 
-    public static void collectPrincipalsFromEvents(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String eventSearch) {
+    public static void collectPrincipalsFromEvents(P8Realm p8realm,String osName, String eventSearch) {
         if (eventSearch == null){
             eventSearch = "Select * FROM Event where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Events - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,eventSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do{
-                        count++;
-                        Event event = (Event) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(event.get_Owner(), p8realm);
-                        P8Logger.logEventProperties(logger, event, count);
-                        if (!(event.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(event.get_Permissions(), p8realm);
-                    } while(it.hasNext());
-                }
-                logger.info("Total Events: " + count);
-            }
-            else logger.info("No Events were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, eventSearch, FnObjectType.EVENT);
     }
 
-    public static void collectPrincipalsFromStoragePolicies(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String storagePolicySearch) {
+    public static void collectPrincipalsFromStoragePolicies(P8Realm p8realm,String osName, String storagePolicySearch) {
         if (storagePolicySearch == null) {
             storagePolicySearch = "Select * FROM StoragePolicy where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Storage Policies - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,storagePolicySearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        StoragePolicy storagePolicy = (StoragePolicy) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(storagePolicy.get_Owner(), p8realm);
-                        P8Logger.logStoragePolicyProperties(logger, storagePolicy, count);
-                        if (!(storagePolicy.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(storagePolicy.get_Permissions(), p8realm);
-                        } while (it.hasNext());
-                }
-                logger.info("Total Storage Policies: " + count);
-            }
-            else logger.info("No Storage Policies were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, storagePolicySearch, FnObjectType.STORAGE_POLICY);
     }
 
-    public static void collectPrincipalsFromStorageAreas(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String storageAreaSearch) {
+    public static void collectPrincipalsFromStorageAreas(P8Realm p8realm,String osName, String storageAreaSearch) {
         if (storageAreaSearch == null) {
             storageAreaSearch = "Select * FROM StorageArea where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Storage Areas - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, storageAreaSearch);
-            if(!(independentObjectSet.isEmpty())) {
-                int count = 0;
-                @SuppressWarnings("rawtypes")
-                Iterator it = independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        StorageArea storageArea = (StorageArea) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(storageArea.get_Owner(), p8realm);
-                        P8Logger.logStorageAreaProperties(logger, storageArea, count);
-                        if (!(storageArea.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(storageArea.get_Permissions(), p8realm);
-                    } while (it.hasNext());
-                }
-                logger.info("Total Storage Areas: " + count);
-            }
-            else logger.info("No Storage Areas were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, storageAreaSearch, FnObjectType.STORAGE_AREA);
     }
 
-    public static void collectPrincipalsFromSecurityPolicies(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String securityPolicySearch) {
+    public static void collectPrincipalsFromSecurityPolicies(P8Realm p8realm,String osName, String securityPolicySearch) {
         if (securityPolicySearch == null) {
             securityPolicySearch = "Select * FROM SecurityPolicy where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Security Policies - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,securityPolicySearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        SecurityPolicy securityPolicy = (SecurityPolicy) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(securityPolicy.get_Owner(), p8realm);
-                        P8Logger.logSecurityPolicyProperties(logger, securityPolicy, count);
-                        if (!(securityPolicy.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(securityPolicy.get_Permissions(), p8realm);
-                        if (!(securityPolicy.get_SecurityTemplates().isEmpty())){
-                            Iterator it1 = securityPolicy.get_SecurityTemplates().iterator();
-                            int count2 = 0;
-                            if (it1.hasNext()) {
-                                do {
-                                    count2++;
-                                    SecurityTemplate securityTemplate = (SecurityTemplate) it1.next();
-                                    P8Logger.logSecurityTemplateProperties(logger, count2, securityTemplate);
-                                    if (!(securityTemplate.get_TemplatePermissions().isEmpty()))
-                                        principalRepo.addPrincipalsFromPermissions(securityTemplate.get_TemplatePermissions(), p8realm);
-                                    } while(it1.hasNext());
-                            }
-                        }
-                    } while(it.hasNext());
-                }
-                logger.info("Total Security Policies: " + count);
-            }
-            else logger.info("No Security Policies were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, securityPolicySearch, FnObjectType.SECURITY_POLICY);
+
     }
 
-    public static void collectPrincipalsFromSubscriptions(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String subscriptionSearch) {
+    public static void collectPrincipalsFromSubscriptions(P8Realm p8realm,String osName, String subscriptionSearch) {
         if (subscriptionSearch == null) {
+            subscriptionSearch = "Select * FROM ClassSubscription where Id IS NOT NULL";
         }
-        subscriptionSearch = "Select * FROM Subscription where Id IS NOT NULL";
-        try{
-            logger.info(String.format("Collecting Principals from Subscriptions - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, subscriptionSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        Subscription subscription = (Subscription) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(subscription.get_Owner(), p8realm);
-                        P8Logger.logSubscriptionProperties(logger, subscription, count);
-                        if (!(subscription.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(subscription.get_Permissions(), p8realm);
-                    } while (it.hasNext());
-                }
-                logger.info("Total Subscriptions: " + count);
-            }
-            else logger.info("No Subscriptions were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, subscriptionSearch, FnObjectType.CLASS_SUBSCRIPTION);
     }
 
-    public static void collectPrincipalsFromSweeps(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String sweepSearch) {
+    public static void collectPrincipalsFromSweeps(P8Realm p8realm,String osName, String sweepSearch) {
         if (sweepSearch == null) {
             sweepSearch = "Select * FROM CmSweep where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Sweeps - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,sweepSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        CmSweep sweep = (CmSweep) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(sweep.get_Owner(), p8realm);
-                        P8Logger.logSweepProperties(logger, sweep, count);
-                        if (!(sweep.get_Permissions().isEmpty()))
-                            principalRepo.addPrincipalsFromPermissions(sweep.get_Permissions(), p8realm);
-                        } while (it.hasNext());
-                }
-                logger.info("Total Sweeps: " + count);
-            }
-            else logger.info("No Sweeps were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, sweepSearch,FnObjectType.SWEEP);
     }
 
-    public static void collectPrincipalsFromSweepPolicies(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String sweepPolicySearch) {
+    public static void collectPrincipalsFromSweepPolicies(P8Realm p8realm,String osName, String sweepPolicySearch) {
         if (sweepPolicySearch == null) {
             sweepPolicySearch = "select * FROM CmSweepPolicy where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Sweep Policies - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,sweepPolicySearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        CmSweepPolicy sweepPolicy = (CmSweepPolicy) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(sweepPolicy.get_Owner(), p8realm);
-                        P8Logger.logSweepPolicyProperties(logger, sweepPolicy, count);
-                        if (!(sweepPolicy.get_Permissions().isEmpty())) {
-                        principalRepo.addPrincipalsFromPermissions(sweepPolicy.get_Permissions(), p8realm);
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Sweep Policies: " + count);
-            }  else logger.info("No Sweep Policies were found!");
-        }  catch(Exception e){
-            //e.printStackTrace();
-        }
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, sweepPolicySearch, FnObjectType.SWEEP_POLICY);
     }
 
-    public static void collectPrincipalsFromTabledefinitions(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String tableDefinitionSearch) {
-        if (tableDefinitionSearch == null) {
-            tableDefinitionSearch = "Select * FROM TableDefinition where Id IS NOT NULL";
-        }
-        try{
-            logger.info(String.format("Collecting Principals from Table Definitions - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, tableDefinitionSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                @SuppressWarnings("rawtypes")
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        TableDefinition tableDefinition = (TableDefinition) it.next();
-                        principalRepo.addPrincipalFromObjectOwner(tableDefinition.get_Owner(), p8realm);
-                        P8Logger.logTableDefinitionProperties(logger, tableDefinition, count);
-                        if (!(tableDefinition.get_Permissions().isEmpty())) {
-                            principalRepo.addPrincipalsFromPermissions(tableDefinition.get_Permissions(), p8realm);
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Table Definitions: " + count);
-            }
-            else logger.info("No Table Definitions were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+    public static void collectPrincipalsFromChangePreprocessorAction(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM CmChangePreprocessorAction where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.CHANGE_PREPROCESSOR_ACTION);
+
+    }
+    public static void collectPrincipalsFromContentConversionAction(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM CmContentConversionAction where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.CONTENT_CONVERSION_ACTION);
+    }
+    public static void collectPrincipalsFromDocumentClassificationAction(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM DocumentClassificationAction where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.DOCUMENT_CLASSIFICATION_ACTION);
+    }
+    public static void collectPrincipalsFromDocumentLifecycleAction(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM DocumentLifecycleAction where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.DOCUMENT_LIFECYCLE_ACTION);
+    }
+    public static void collectPrincipalsFromDocumentLifecyclePolicy(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM DocumentLifecyclePolicy where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.DOCUMENT_LIFECYCLE_POLICY);
     }
 
-    public static void collectPrincipalsFromAbstractsPersistable(PrincipalRepo principalRepo, P8Realm p8realm,String osName, String abstractPersistableType) {
+    public static void collectPrincipalsFromEventAction(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM EventAction where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch,FnObjectType.EVENT_ACTION);
+    }
+    public static void collectPrincipalsFromInstanceSubscription(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM InstanceSubscription where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.INSTANCE_SUBSCRIPTION);
+    }
+    public static void collectPrincipalsFromRoleMembershipAction(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM CmRoleMembershipAction where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.ROLE_MEMBERSHIP_ACTION);
+    }
+    public static void collectPrincipalsFromSearchFunctionDefinition(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM CmSearchFunctionDefinition where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.SEARCH_FUNCTION_DEFINITION);
+    }
+    public static void collectPrincipalsFromSweepAction(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM CmSweepAction where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.SWEEP_ACTION);
+    }
+    public static void collectPrincipalsFromTextIndexingPreprocessorAction(P8Realm p8realm, String osName){
+        String objectSearch = "select * FROM CmTextIndexingPreprocessorAction where Id IS NOT NULL";
+        collectPrincipalsFromRepositoryObjects(p8realm, osName, objectSearch,FnObjectType.TEXT_INDEXING_PREPROCESSOR_ACTION);
+    }
+
+    public static void collectPrincipalsFromAbstractsPersistable(P8Realm p8realm,String osName, String abstractPersistableType) {
         if (abstractPersistableType != null) {
             String abstractPersistableSearch = "select * from " + abstractPersistableType + " where Id IS NOT NULL";
-            try{
-                logger.info(String.format("Collecting Principals from %s - Object Store: %s", abstractPersistableType, osName));
-                IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, abstractPersistableSearch);
-                if(!(independentObjectSet.isEmpty())){
-                    int count=0;
-                    @SuppressWarnings("rawtypes")
-                    Iterator it=independentObjectSet.iterator();
-                    if (it.hasNext()) {
-                        do {
-                            count++;
-                            CmAbstractPersistable cmAbstractPersistable = (CmAbstractPersistable) it.next();
-                            principalRepo.addPrincipalFromObjectOwner(cmAbstractPersistable.get_Owner(), p8realm);
-                            P8Logger.logAbstractPersistableProperties(logger, cmAbstractPersistable, count);
-                            if (!(cmAbstractPersistable.get_Permissions().isEmpty())) {
-                                principalRepo.addPrincipalsFromPermissions(cmAbstractPersistable.get_Permissions(), p8realm);
-                            }
-                        } while (it.hasNext());
-                    }
-                    logger.info(String.format("Total %s: %d", abstractPersistableType, count));
-                }
-                else logger.info(String.format("No %s were found!", abstractPersistableType));
+            FnObjectType fnObjectType;
+            switch (abstractPersistableType) {
+                case "ClbDownloadRecord":
+                    fnObjectType = FnObjectType.DOWNLOAD_RECORD;
+                    break;
+                case "ClbSummaryData":
+                    fnObjectType = FnObjectType.SUMMARY_DATA;
+                    break;
+                case "CmCustomRoleBase":
+                    fnObjectType = FnObjectType.CUSTOM_ROLE_BASE;
+                    break;
+                default:
+                    fnObjectType = FnObjectType.ABSTRACT_PERSISTABLE;
+                    break;
             }
-            catch(Exception e){
-                //e.printStackTrace();
-            }
+            collectPrincipalsFromRepositoryObjects(p8realm, osName, abstractPersistableSearch, fnObjectType);
         }
     }
+
+    public static void collectPrincipalsFromTabledefinitions(P8Realm p8realm,String osName, String tableDefinitionSearch) {
+		if (tableDefinitionSearch == null) {
+			tableDefinitionSearch = "Select * FROM TableDefinition where Id IS NOT NULL";
+		}
+		collectPrincipalsFromRepositoryObjects(p8realm, osName, tableDefinitionSearch, FnObjectType.TABLE_DEFINITION);
+	}
+
+	private static void collectPrincipalsFromRepositoryObjects(P8Realm p8realm, String osName, String objectSearch, FnObjectType fnObjectType){
+	try{
+		logger.info(String.format("Collecting Principals from %s - Object Store: %s",fnObjectType.toString() ,osName));
+		IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, objectSearch);
+		if(!(independentObjectSet.isEmpty())){
+			int count=0;
+			Iterator it=independentObjectSet.iterator();
+			if (it.hasNext()) {
+				do {
+					count++;
+					EngineObject repositoryObject = (EngineObject) it.next();
+					String owner = repositoryObject.getProperties().getStringValue("Owner");
+					PrincipalRepo.getInstance().addPrincipalFromObjectOwner(owner, p8realm);
+					P8Logger.logRepositoryObjectProperties(logger, repositoryObject, fnObjectType, count);
+					if (!(repositoryObject.getProperties().getDependentObjectListValue("Permissions").isEmpty())) {
+						AccessPermissionList permissionList = (AccessPermissionList) repositoryObject.getProperties().getDependentObjectListValue("Permissions");
+						collectPrincipalsFromRepositoryObjects(p8realm, permissionList);
+					}
+					if (fnObjectType.equals(FnObjectType.CLASS_DEFINITION)){
+						if (!(repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions").isEmpty())) {
+							AccessPermissionList defaultInstancePermissionList = (AccessPermissionList) repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions");
+							collectPrincipalsFromRepositoryObjects(p8realm, defaultInstancePermissionList);
+						}
+					}
+					if (fnObjectType.equals(FnObjectType.SECURITY_POLICY)){
+						if(!(repositoryObject.getProperties().getDependentObjectListValue("SecurityTemplates").isEmpty())){
+							SecurityTemplateList securityTemplateList = (SecurityTemplateList) repositoryObject.getProperties().getDependentObjectListValue("SecurityTemplates");
+							collectPrincipalsFromSecurityTemplateList(p8realm, securityTemplateList);
+						}
+					}
+				} while (it.hasNext());
+			}
+			logger.info(String.format("Total %s: %d", fnObjectType, count));
+		}
+		else logger.info(String.format("No %s were found!", fnObjectType));
+	}
+	catch(Exception e){
+		//e.printStackTrace();
+	}
+}
+
+	private static void collectPrincipalsFromRepositoryObjects(P8Realm p8realm, AccessPermissionList permissionList) {
+		Iterator it1 = permissionList.iterator();
+		if (it1.hasNext()) {
+			do {
+				AccessPermission permission = (AccessPermission) it1.next();
+				PrincipalRepo.getInstance().addPrincipalFromPermission(permission, p8realm);
+			} while (it1.hasNext());
+		}
+	}
+
+	private static void collectPrincipalsFromSecurityTemplateList(P8Realm p8realm, SecurityTemplateList securityTemplateList){
+		Iterator it2 = securityTemplateList.iterator();
+		int count2 = 0;
+		if (it2.hasNext()) {
+			do {
+				count2++;
+				EngineObject securityTemplate = (EngineObject) it2.next();
+				P8Logger.logRepositoryObjectProperties(logger, securityTemplate, FnObjectType.SECURITY_TEMPLATE, count2);
+				if (!(securityTemplate.getProperties().getDependentObjectListValue("TemplatePermissions").isEmpty())) {
+					AccessPermissionList permissionList = (AccessPermissionList)  securityTemplate.getProperties().getDependentObjectListValue("TemplatePermissions");
+					collectPrincipalsFromRepositoryObjects(p8realm, permissionList);
+				}
+			} while(it2.hasNext());
+		}
+	}
 }

@@ -10,8 +10,7 @@ import java.util.Collection;
 import java.util.List;
 
 import ar.com.lpa.samples.model.*;
-import ar.com.lpa.samples.repository.FnDbTableRepo;
-import ar.com.lpa.samples.repository.PrincipalRepo;
+import ar.com.lpa.samples.repository.SecurableObjectRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.filenet.api.security.Group;
 import com.filenet.api.security.User;
@@ -81,17 +80,14 @@ public class ResultExporter {
         }
     }
 
-    public static void exportSelectToFnDbTables(ResultSet resultSet, FnDbTableRepo fnDbTableRepo) throws SQLException, IOException {
+    public static void exportSelectToSecurableObjectRepo(ResultSet resultSet) throws SQLException {
         // Escribir filas
         while (resultSet.next()) {
             String tableName = resultSet.getString("table_name");
-            int rowCount = resultSet.getInt("row_count");
+            int lineCount = resultSet.getInt("row_count");
             int securityIdCount = resultSet.getInt("security_id_count");
-            FnDbTable fnDbTable = new FnDbTable();
-            fnDbTable.setTableName(tableName);
-            fnDbTable.setRowCount(rowCount);
-            fnDbTable.setSecurityIdCount(securityIdCount);
-            fnDbTableRepo.getFnDbTables().add(fnDbTable);
+            SecurableObject securableObject = new SecurableObject(tableName, lineCount, securityIdCount);
+            SecurableObjectRepo.getInstance().createSecurableObject(securableObject);
         }
     }
 
@@ -200,12 +196,12 @@ public class ResultExporter {
                     granteeName = fnAccessPermission.getGranteeName().getName();
                 }
                 String principalType = fnAccessPermission.getPrincipalType().toString();
-                int permissionSource = fnAccessPermission.getPermissionSource();
+                String permissionSource = fnAccessPermission.getPermissionSource();
                 int accessMask = fnAccessPermission.getAccessMask();
-                int accessType = fnAccessPermission.getAccessType();
+                String accessType = fnAccessPermission.getAccessType();
                 int inheritableDepth = fnAccessPermission.getInheritableDepth();
                 char status = fnAccessPermission.getStatus();
-                String line = String.format("\"%s\"|\"%s\"|\"%s\"|\"%s\"|\"%d\"|\"%d\"|\"%d\"|\"%d\"|\"%s\"",
+                String line = String.format("\"%s\"|\"%s\"|\"%s\"|\"%s\"|\"%s\"|\"%d\"|\"%s\"|\"%d\"|\"%s\"",
                         objectId, fnObjectType, granteeName, principalType, permissionSource, accessMask, accessType, inheritableDepth, status);
                 bufferedWriter.write(line);
                 bufferedWriter.newLine();

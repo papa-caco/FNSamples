@@ -6,18 +6,12 @@ import ar.com.lpa.samples.model.fnObjects.P8Realm;
 import ar.com.lpa.samples.repository.OwnerRepo;
 import ar.com.lpa.samples.repository.PermissionRepo;
 import ar.com.lpa.samples.repository.PrincipalRepo;
-import com.filenet.api.admin.*;
+import com.filenet.api.collection.AccessPermissionList;
 import com.filenet.api.collection.IndependentObjectSet;
-import com.filenet.api.core.*;
-import com.filenet.api.events.Event;
-import com.filenet.api.events.Subscription;
+import com.filenet.api.collection.SecurityTemplateList;
+import com.filenet.api.core.EngineObject;
 import com.filenet.api.security.AccessPermission;
-import com.filenet.api.security.SecurityPolicy;
-import com.filenet.api.security.SecurityTemplate;
-import com.filenet.api.sweep.CmSweep;
-import com.filenet.api.sweep.CmSweepPolicy;
 import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -28,692 +22,250 @@ public class P8SecurityCollector
 	private static final Logger logger = Logger.getLogger(P8SecurityCollector.class);
 
     public static void collectSecurityFromDocuments(P8Realm p8realm, String osName, String documentSearch) {
-        if (documentSearch == null){
+        if (documentSearch == null) {
             documentSearch = "SELECT * FROM Document where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Documents - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,documentSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-				Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        Document document = (Document) it.next();
-                        //System.out.println(document.get_Owner() + " - " +  document.get_Id().toString());
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(document.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(document.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromDocument(document, owner);
-                        P8Logger.logDocumentProperties(logger, document, count);
-                        if (!(document.get_Permissions().isEmpty())) {
-                            Iterator it1 = document.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    /*System.out.println(permission.get_GranteeName() + " - " + permission.get_GranteeType().toString() + " - " + permission.get_PermissionSource().getValue()
-                                            + " - " + permission.get_AccessMask() + " - " + permission.get_AccessType().getValue() + " - " + permission.get_InheritableDepth());*/
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    //System.out.println("SARASA 2 -->> " + granteeName);
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(document.get_Id().toString(), FnObjectType.DOCUMENT, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while (it.hasNext()) ;
-                }
-                logger.info("Total Documents: " + count);
-            }
-            else logger.info("No documents were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, documentSearch, FnObjectType.DOCUMENT);
     }
 
     public static void collectSecurityFromCustomObjects(P8Realm p8realm, String osName, String customObjectSearch) {
-        if (customObjectSearch == null){
+        if (customObjectSearch == null) {
             customObjectSearch = "SELECT * FROM CustomObject where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Custom Objects - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm, logger, osName, customObjectSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        CustomObject customObject = (CustomObject) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(customObject.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(customObject.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromCustomObject(customObject, owner);
-                        P8Logger.logCustomObjectProperties(logger, customObject, count);
-                        if (!(customObject.get_Permissions().isEmpty())) {
-                            Iterator it1 = customObject.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(customObject.get_Id().toString(), FnObjectType.CUSTOM_OBJECT, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    }  while (it.hasNext()) ;
-                }
-                logger.info("Total Custom Objects: " + count);
-            }
-            else logger.info("No custom objects were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, customObjectSearch, FnObjectType.CUSTOM_OBJECT);
     }
-    
+
     public static void collectSecurityFromFolders(P8Realm p8realm, String osName, String folderSearch) {
-        if (folderSearch == null){
+        if (folderSearch == null) {
             folderSearch = "Select * FROM Folder where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Folders - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,folderSearch);
-            if(!(independentObjectSet.isEmpty())) {
-                int count = 0;
-                Iterator it = independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        Folder folder = (Folder) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(folder.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(folder.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromFolder(folder, owner);
-                        P8Logger.logFolderProperties(logger, folder, count);
-                        if (!(folder.get_Permissions().isEmpty())) {
-                            Iterator it1 = folder.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(folder.get_Id().toString(), FnObjectType.FOLDER, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Folders: " + count);
-            }
-            else logger.info("No folders were found!");
-        }
-        catch(Exception e) {
-                //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, folderSearch, FnObjectType.FOLDER);
     }
 
     public static void collectSecurityFromClassDefinitions(P8Realm p8realm, String osName, String classSearch) {
-        if (classSearch == null){
+        if (classSearch == null) {
             classSearch = "select * FROM ClassDefinition where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Class Definitions - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,classSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        ClassDefinition classDefinition = (ClassDefinition) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(classDefinition.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(classDefinition.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromClassDefinition(classDefinition, owner);
-                        P8Logger.logClassProperties(logger, classDefinition, count);
-                        if (!(classDefinition.get_Permissions().isEmpty())) {
-                            Iterator it1 = classDefinition.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(classDefinition.get_Id().toString(), FnObjectType.CLASS_DEFINITION, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                        if (!(classDefinition.get_DefaultInstancePermissions().isEmpty())) {
-                            Iterator it2 = classDefinition.get_DefaultInstancePermissions().iterator();
-                            if (it2.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it2.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(classDefinition.get_Id().toString(), FnObjectType.CLASS_DEFINITION_DI, granteeName, permission);
-                                } while (it2.hasNext());
-                            }
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Class Definitions: " + count);
-            }
-            else logger.info("No Class Definitions were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm,osName, classSearch, FnObjectType.CLASS_DEFINITION);
     }
 
     public static void collectSecurityFromAnnotations(P8Realm p8realm,String osName, String annotationSearch) {
-        if (annotationSearch == null){
+        if (annotationSearch == null) {
             annotationSearch = "Select * FROM Annotation where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Annotations - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,annotationSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()){
-                    do {
-                        count++;
-                        Annotation annotation = (Annotation) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(annotation.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(annotation.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromAnnotation(annotation, owner);
-                        P8Logger.logAnnotationProperties(logger, annotation, count);
-                        if (!(annotation.get_Permissions().isEmpty())) {
-                            Iterator it1 = annotation.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(annotation.get_Id().toString(), FnObjectType.ANNOTATION, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                     } while (it.hasNext());
-                }
-                logger.info("Total Annotations: " + count);
-            }
-            else logger.info("No Annotations were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, annotationSearch, FnObjectType.ANNOTATION);
     }
 
     public static void collectSecurityFromPropertyTemplates(P8Realm p8realm,String osName, String propertyTemplateSearch) {
-        if (propertyTemplateSearch == null){
+        if (propertyTemplateSearch == null) {
             propertyTemplateSearch = "Select * FROM PropertyTemplate where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Property Templates - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,propertyTemplateSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()){
-                    do {
-                        count++;
-                        PropertyTemplate propertyTemplate= (PropertyTemplate) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(propertyTemplate.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(propertyTemplate.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromPropertyTemplate(propertyTemplate, owner);
-                        P8Logger.logPropertyTemplatesProperties(logger, propertyTemplate, count);
-                        if (!(propertyTemplate.get_Permissions().isEmpty())) {
-                            Iterator it1 = propertyTemplate.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(propertyTemplate.get_Id().toString(), FnObjectType.PROPERTY_TEMPLATE, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Property Templates: " + count);
-            }
-            else logger.info("No Property Templates were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, propertyTemplateSearch, FnObjectType.PROPERTY_TEMPLATE);
     }
 
     public static void collectSecurityFromChoiceLists(P8Realm p8realm,String osName, String choiceListSearch) {
-        if (choiceListSearch == null){
+        if (choiceListSearch == null) {
             choiceListSearch = "Select * FROM ChoiceList where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Choice Lists - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,choiceListSearch);
-            if(!(independentObjectSet.isEmpty())) {
-                int count = 0;
-                Iterator it = independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        ChoiceList choiceList = (ChoiceList) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(choiceList.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(choiceList.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromChoiceList(choiceList, owner);
-                        P8Logger.logChoiceListProperties(logger, choiceList, count);
-                        if (!(choiceList.get_Permissions().isEmpty())) {
-                            Iterator it1 = choiceList.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(choiceList.get_Id().toString(), FnObjectType.CHOICE_LIST, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Choice Lists: " + count);
-            }
-            else logger.info("No Choice Lists were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, choiceListSearch, FnObjectType.CHOICE_LIST);
     }
 
     public static void collectSecurityFromEvents(P8Realm p8realm,String osName, String eventSearch) {
-        if (eventSearch == null){
+        if (eventSearch == null) {
             eventSearch = "Select * FROM Event where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Events - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,eventSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do{
-                        count++;
-                        Event event = (Event) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(event.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(event.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromEvent(event, owner);
-                        P8Logger.logEventProperties(logger, event, count);
-                        if (!(event.get_Permissions().isEmpty())) {
-                            Iterator it1 = event.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(event.get_Id().toString(), FnObjectType.EVENT, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while(it.hasNext());
-                }
-                logger.info("Total Events: " + count);
-            }
-            else logger.info("No Events were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, eventSearch, FnObjectType.EVENT);
     }
 
     public static void collectSecurityFromStoragePolicies(P8Realm p8realm,String osName, String storagePolicySearch) {
         if (storagePolicySearch == null) {
             storagePolicySearch = "Select * FROM StoragePolicy where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Storage Policies - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,storagePolicySearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        StoragePolicy storagePolicy = (StoragePolicy) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(storagePolicy.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(storagePolicy.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromStoragePolicy(storagePolicy, owner);
-                        P8Logger.logStoragePolicyProperties(logger, storagePolicy, count);
-                        if (!(storagePolicy.get_Permissions().isEmpty())) {
-                            Iterator it1 = storagePolicy.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(storagePolicy.get_Id().toString(), FnObjectType.STORAGE_POLICY, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                        } while (it.hasNext());
-                }
-                logger.info("Total Storage Policies: " + count);
-            }
-            else logger.info("No Storage Policies were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, storagePolicySearch, FnObjectType.STORAGE_POLICY);
     }
 
     public static void collectSecurityFromStorageAreas(P8Realm p8realm,String osName, String storageAreaSearch) {
         if (storageAreaSearch == null) {
             storageAreaSearch = "Select * FROM StorageArea where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Storage Areas - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, storageAreaSearch);
-            if(!(independentObjectSet.isEmpty())) {
-                int count = 0;
-                Iterator it = independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        StorageArea storageArea = (StorageArea) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(storageArea.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(storageArea.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromStorageArea(storageArea, owner);
-                        P8Logger.logStorageAreaProperties(logger, storageArea, count);
-                        if (!(storageArea.get_Permissions().isEmpty())) {
-                            Iterator it1 = storageArea.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(storageArea.get_Id().toString(), FnObjectType.STORAGE_AREA, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Storage Areas: " + count);
-            }
-            else logger.info("No Storage Areas were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, storageAreaSearch, FnObjectType.STORAGE_AREA);
     }
 
     public static void collectSecurityFromSecurityPolicies(P8Realm p8realm,String osName, String securityPolicySearch) {
         if (securityPolicySearch == null) {
             securityPolicySearch = "Select * FROM SecurityPolicy where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Security Policies - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,securityPolicySearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        SecurityPolicy securityPolicy = (SecurityPolicy) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(securityPolicy.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(securityPolicy.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromSecurityPolicy(securityPolicy, owner);
-                        P8Logger.logSecurityPolicyProperties(logger, securityPolicy, count);
-                        if (!(securityPolicy.get_Permissions().isEmpty())) {
-                            Iterator it1 = securityPolicy.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(securityPolicy.get_Id().toString(), FnObjectType.SECURITY_POLICY, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                        if (!(securityPolicy.get_SecurityTemplates().isEmpty())){
-                            Iterator it2 = securityPolicy.get_SecurityTemplates().iterator();
-                            int count2 = 0;
-                            if (it2.hasNext()) {
-                                do {
-                                    count2++;
-                                    SecurityTemplate securityTemplate = (SecurityTemplate) it2.next();
-                                    P8Logger.logSecurityTemplateProperties(logger, count2, securityTemplate);
-                                    if (!(securityTemplate.get_TemplatePermissions().isEmpty())) {
-                                        Iterator it3 = securityTemplate.get_TemplatePermissions().iterator();
-                                        if (it3.hasNext()) {
-                                            do {
-                                                AccessPermission permission = (AccessPermission) it3.next();
-                                                PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                                Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                                PermissionRepo.getInstance().addPermissionsFromFnObject(securityTemplate.get_Id().toString(), FnObjectType.SECURITY_TEMPLATE, granteeName, permission);
-                                            } while (it3.hasNext());
-                                        }
-                                    }
-                                } while(it2.hasNext());
-                            }
-                        }
-                    } while(it.hasNext());
-                }
-                logger.info("Total Security Policies: " + count);
-            }
-            else logger.info("No Security Policies were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, securityPolicySearch, FnObjectType.SECURITY_POLICY);
     }
 
-    public static void collectSecurityFromSubscriptions(P8Realm p8realm,String osName, String subscriptionSearch) {
+    public static void collectSecurityFromClassSubscriptions(P8Realm p8realm,String osName, String subscriptionSearch) {
         if (subscriptionSearch == null) {
-            subscriptionSearch = "Select * FROM Subscription where Id IS NOT NULL";
+            subscriptionSearch = "Select * FROM ClassSubscription where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Subscriptions - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, subscriptionSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        Subscription subscription = (Subscription) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(subscription.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(subscription.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromSubscription(subscription, owner);
-                        P8Logger.logSubscriptionProperties(logger, subscription, count);
-                        if (!(subscription.get_Permissions().isEmpty())) {
-                            Iterator it1 = subscription.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(subscription.get_Id().toString(), FnObjectType.SUBSCRIPTION, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Subscriptions: " + count);
-            }
-            else logger.info("No Subscriptions were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, subscriptionSearch, FnObjectType.CLASS_SUBSCRIPTION);
     }
 
     public static void collectSecurityFromSweeps(P8Realm p8realm,String osName, String sweepSearch) {
         if (sweepSearch == null) {
             sweepSearch = "Select * FROM CmSweep where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Sweeps - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,sweepSearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        CmSweep sweep = (CmSweep) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(sweep.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(sweep.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromSweep(sweep, owner);
-                        P8Logger.logSweepProperties(logger, sweep, count);
-                        if (!(sweep.get_Permissions().isEmpty())) {
-                            Iterator it1 = sweep.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(sweep.get_Id().toString(), FnObjectType.SWEEP, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Sweeps: " + count);
-            }
-            else logger.info("No Sweeps were found!");
-        }
-        catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, sweepSearch, FnObjectType.SWEEP);
     }
 
     public static void collectSecurityFromSweepPolicies(P8Realm p8realm,String osName, String sweepPolicySearch) {
         if (sweepPolicySearch == null) {
             sweepPolicySearch = "select * FROM CmSweepPolicy where Id IS NOT NULL";
         }
-        try{
-            logger.info(String.format("Collecting Principals from Sweep Policies - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName,sweepPolicySearch);
-            if(!(independentObjectSet.isEmpty())){
-                int count=0;
-                Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        CmSweepPolicy sweepPolicy = (CmSweepPolicy) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(sweepPolicy.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(sweepPolicy.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromSweepPolicy(sweepPolicy, owner);
-                        P8Logger.logSweepPolicyProperties(logger, sweepPolicy, count);
-                        if (!(sweepPolicy.get_Permissions().isEmpty())) {
-                            Iterator it1 = sweepPolicy.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(sweepPolicy.get_Id().toString(), FnObjectType.SWEEP_POLICY, granteeName, permission);
-                                } while (it1.hasNext());
-                            }
-                        }
-                    } while (it.hasNext());
-                }
-                logger.info("Total Sweep Policies: " + count);
-            }  else logger.info("No Sweep Policies were found!");
-        }  catch(Exception e){
-            //e.printStackTrace();
-        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, sweepPolicySearch, FnObjectType.SWEEP_POLICY);
     }
 
     public static void collectSecurityFromTabledefinitions(P8Realm p8realm,String osName, String tableDefinitionSearch) {
         if (tableDefinitionSearch == null) {
             tableDefinitionSearch = "Select * FROM TableDefinition where Id IS NOT NULL";
         }
+        collectSecurityFromRepositoryObjects(p8realm, osName, tableDefinitionSearch, FnObjectType.TABLE_DEFINITION);
+    }
+
+    public static void collectSecurityFromAbstractsPersistable(P8Realm p8realm,String osName, String abstractPersistableType) {
+        if (abstractPersistableType != null) {
+            String abstractPersistableSearch = "select * from " + abstractPersistableType + " where Id IS NOT NULL";
+            FnObjectType fnObjectType = null;
+            switch (abstractPersistableType) {
+                case "ClbDownloadRecord":
+                    fnObjectType = FnObjectType.DOWNLOAD_RECORD;
+                    break;
+                case "ClbSummaryData":
+                    fnObjectType = FnObjectType.SUMMARY_DATA;
+                    break;
+                case "CmCustomRoleBase":
+                    fnObjectType = FnObjectType.CUSTOM_ROLE_BASE;
+                    break;
+                default:
+                    fnObjectType = FnObjectType.ABSTRACT_PERSISTABLE;
+                    break;
+            }
+            collectSecurityFromRepositoryObjects(p8realm, osName, abstractPersistableSearch, fnObjectType);
+        }
+    }
+
+    public static void collectSecurityFromEventActions(P8Realm p8realm, String osName) {
+        String eventActionSearch = "Select * FROM EventAction where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, eventActionSearch, FnObjectType.EVENT_ACTION);
+    }
+
+    public static void collectSecurityFromChangePreprocessorAction(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM CmChangePreprocessorAction where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.CHANGE_PREPROCESSOR_ACTION);
+    }
+    public static void collectSecurityFromContentConversionAction(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM CmContentConversionAction where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.CONTENT_CONVERSION_ACTION);
+    }
+    public static void collectSecurityFromDocumentClassificationAction(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM DocumentClassificationAction where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.DOCUMENT_CLASSIFICATION_ACTION);
+    }
+    public static void collectSecurityFromDocumentLifecycleAction(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM DocumentLifecycleAction where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.DOCUMENT_LIFECYCLE_ACTION);
+    }
+    public static void collectSecurityFromDocumentLifecyclePolicy(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM DocumentLifecyclePolicy where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.DOCUMENT_LIFECYCLE_POLICY);
+    }
+    public static void collectSecurityFromInstanceSubscription(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM InstanceSubscription where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.INSTANCE_SUBSCRIPTION);
+    }
+    public static void collectSecurityFromRoleMembershipAction(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM CmRoleMembershipAction where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.ROLE_MEMBERSHIP_ACTION);
+    }
+    public static void collectSecurityFromSearchFunctionDefinition(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM CmSearchFunctionDefinition where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.SEARCH_FUNCTION_DEFINITION);
+    }
+    public static void collectSecurityFromSweepAction(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM CmSweepAction where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.SWEEP_ACTION);
+    }
+    public static void collectSecurityFromTextIndexingPreprocessorAction(P8Realm p8realm, String osName){
+        String objectSearch = "Select * FROM CmTextIndexingPreprocessorAction where Id IS NOT NULL";
+        collectSecurityFromRepositoryObjects(p8realm, osName, objectSearch, FnObjectType.TEXT_INDEXING_PREPROCESSOR_ACTION);
+    }
+
+    private static void collectSecurityFromRepositoryObjects(P8Realm p8realm,String osName, String objectSearch, FnObjectType fnObjectType){
         try{
-            logger.info(String.format("Collecting Principals from Table Definitions - Object Store: %s", osName));
-            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, tableDefinitionSearch);
+            logger.info(String.format("Collecting Principals from %s - Object Store: %s",fnObjectType.toString() ,osName));
+            IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, objectSearch);
             if(!(independentObjectSet.isEmpty())){
                 int count=0;
                 Iterator it=independentObjectSet.iterator();
                 if (it.hasNext()) {
                     do {
                         count++;
-                        TableDefinition tableDefinition = (TableDefinition) it.next();
-                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(tableDefinition.get_Owner(), p8realm);
-                        Principal owner = PrincipalRepo.getInstance().getPrincipalByName(tableDefinition.get_Owner());
-                        OwnerRepo.getInstance().addOwnerFromTableDefinition(tableDefinition, owner);
-                        P8Logger.logTableDefinitionProperties(logger, tableDefinition, count);
-                        if (!(tableDefinition.get_Permissions().isEmpty())) {
-                            Iterator it1 = tableDefinition.get_Permissions().iterator();
-                            if (it1.hasNext()) {
-                                do {
-                                    AccessPermission permission = (AccessPermission) it1.next();
-                                    PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                    Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                    PermissionRepo.getInstance().addPermissionsFromFnObject(tableDefinition.get_Id().toString(), FnObjectType.TABLE_DEFINITION, granteeName, permission);
-                                } while (it1.hasNext());
+                        EngineObject repositoryObject = (EngineObject) it.next();
+                        String owner = repositoryObject.getProperties().getStringValue("Owner");
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(owner, p8realm);
+                        Principal newOwner = PrincipalRepo.getInstance().getPrincipalByName(owner);
+                        OwnerRepo.getInstance().addOwnerFromRepositoryObject(repositoryObject, newOwner, fnObjectType);
+                        P8Logger.logRepositoryObjectProperties(logger, repositoryObject, fnObjectType, count);
+                        String objectId = repositoryObject.getProperties().getIdValue("Id").toString();
+                        if (!(repositoryObject.getProperties().getDependentObjectListValue("Permissions").isEmpty())) {
+                            AccessPermissionList permissionList = (AccessPermissionList) repositoryObject.getProperties().getDependentObjectListValue("Permissions");
+                            collectPermissionsFromRepositoryObjects(p8realm, fnObjectType, permissionList, objectId);
+                        }
+                        if (fnObjectType.equals(FnObjectType.CLASS_DEFINITION)){
+                            if (!(repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions").isEmpty())) {
+                                AccessPermissionList defaultInstancePermissionList = (AccessPermissionList) repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions");
+                                collectPermissionsFromRepositoryObjects(p8realm, FnObjectType.CLASS_DEFINITION_DI, defaultInstancePermissionList, objectId);
+                            }
+                        }
+                        if (fnObjectType.equals(FnObjectType.SECURITY_POLICY)){
+                            if(!(repositoryObject.getProperties().getDependentObjectListValue("SecurityTemplates").isEmpty())){
+                                SecurityTemplateList securityTemplateList = (SecurityTemplateList) repositoryObject.getProperties().getDependentObjectListValue("SecurityTemplates");
+                                collectPermissionsFromSecurityTemplateList(p8realm, securityTemplateList);
                             }
                         }
                     } while (it.hasNext());
                 }
-                logger.info("Total Table Definitions: " + count);
+                logger.info(String.format("Total %s: %d", fnObjectType, count));
             }
-            else logger.info("No Table Definitions were found!");
+            else logger.info(String.format("No %s were found!", fnObjectType));
         }
         catch(Exception e){
             //e.printStackTrace();
         }
     }
 
-    public static void collectSecurityFromAbstractsPersistable(P8Realm p8realm,String osName, String abstractPersistableType) {
-        if (abstractPersistableType != null) {
-            String abstractPersistableSearch = "select * from " + abstractPersistableType + " where Id IS NOT NULL";
-            try{
-                logger.info(String.format("Collecting Principals from %s - Object Store: %s", abstractPersistableType, osName));
-                IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, abstractPersistableSearch);
-                if(!(independentObjectSet.isEmpty())){
-                    int count=0;
-                    Iterator it=independentObjectSet.iterator();
-                    if (it.hasNext()) {
-                        do {
-                            count++;
-                            CmAbstractPersistable cmAbstractPersistable = (CmAbstractPersistable) it.next();
-                            PrincipalRepo.getInstance().addPrincipalFromObjectOwner(cmAbstractPersistable.get_Owner(), p8realm);
-                            Principal owner = PrincipalRepo.getInstance().getPrincipalByName(cmAbstractPersistable.get_Owner());
-                            OwnerRepo.getInstance().addOwnerFromAbstractPersistable(cmAbstractPersistable, abstractPersistableType, owner);
-                            P8Logger.logAbstractPersistableProperties(logger, cmAbstractPersistable, count);
-                            if (!(cmAbstractPersistable.get_Permissions().isEmpty())) {
-                                Iterator it1 = cmAbstractPersistable.get_Permissions().iterator();
-                                if (it1.hasNext()) {
-                                    do {
-                                        FnObjectType fnObjectType = null;
-                                        switch (abstractPersistableType) {
-                                            case "ClbDownloadRecord":
-                                                fnObjectType = FnObjectType.DOWNLOAD_RECORD;
-                                                break;
-                                            case "ClbSummaryData":
-                                                fnObjectType = FnObjectType.SUMMARY_DATA;
-                                                break;
-                                            case "CmCustomRoleBase":
-                                                fnObjectType = FnObjectType.CUSTOM_ROLE_BASE;
-                                                break;
-                                            default:
-                                                fnObjectType = FnObjectType.ABSTRACT_PERSISTABLE;
-                                                break;
-                                        }
-                                        AccessPermission permission = (AccessPermission) it1.next();
-                                        PrincipalRepo.getInstance().addPrincipalFromPermission(permission,p8realm);
-                                        Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
-                                        PermissionRepo.getInstance().addPermissionsFromFnObject(cmAbstractPersistable.get_Id().toString(), fnObjectType, granteeName, permission);
-                                    } while (it1.hasNext());
-                                }
-                            }
-                        } while (it.hasNext());
-                    }
-                    logger.info(String.format("Total %s: %d", abstractPersistableType, count));
+    private static void collectPermissionsFromRepositoryObjects(P8Realm p8realm, FnObjectType fnObjectType, AccessPermissionList permissionList, String objectId) {
+        Iterator it1 = permissionList.iterator();
+        if (it1.hasNext()) {
+            do {
+                AccessPermission permission = (AccessPermission) it1.next();
+                PrincipalRepo.getInstance().addPrincipalFromPermission(permission, p8realm);
+                Principal granteeName = PrincipalRepo.getInstance().getPrincipalByName(permission.get_GranteeName());
+                if (granteeName != null) {
+                    PermissionRepo.getInstance().addPermissionsFromFnObject(objectId, fnObjectType, granteeName, permission);
                 }
-                else logger.info(String.format("No %s were found!", abstractPersistableType));
-            }
-            catch(Exception e){
-                //e.printStackTrace();
-            }
+            } while (it1.hasNext());
+        }
+    }
+
+    private static void collectPermissionsFromSecurityTemplateList(P8Realm p8realm, SecurityTemplateList securityTemplateList){
+        Iterator it2 = securityTemplateList.iterator();
+        int count2 = 0;
+        if (it2.hasNext()) {
+            do {
+                count2++;
+                EngineObject securityTemplate = (EngineObject) it2.next();
+                String objectId = securityTemplate.getProperties().getIdValue("Id").toString();
+                P8Logger.logRepositoryObjectProperties(logger, securityTemplate, FnObjectType.SECURITY_TEMPLATE, count2);
+                if (!(securityTemplate.getProperties().getDependentObjectListValue("TemplatePermissions").isEmpty())) {
+                    AccessPermissionList permissionList = (AccessPermissionList)  securityTemplate.getProperties().getDependentObjectListValue("TemplatePermissions");
+                    collectPermissionsFromRepositoryObjects(p8realm,FnObjectType.SECURITY_TEMPLATE,permissionList,objectId);
+                }
+            } while(it2.hasNext());
         }
     }
 

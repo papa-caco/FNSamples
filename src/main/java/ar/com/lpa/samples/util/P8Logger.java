@@ -1,278 +1,52 @@
 package ar.com.lpa.samples.util;
 
-import com.filenet.api.admin.*;
-import com.filenet.api.core.*;
-import com.filenet.api.events.Event;
-import com.filenet.api.events.Subscription;
-import com.filenet.api.security.SecurityPolicy;
-import com.filenet.api.security.SecurityTemplate;
-import com.filenet.api.sweep.CmSweep;
-import com.filenet.api.sweep.CmSweepPolicy;
-import org.apache.log4j.Logger;
-
+import ar.com.lpa.samples.model.FnObjectType;
+import com.filenet.api.core.EngineObject;
 import com.filenet.api.security.AccessPermission;
+import org.apache.log4j.Logger;
 
 import lombok.Getter;
 
 @Getter
 public class P8Logger {
-		
-    public static void logFolderProperties(Logger logger, Folder folder, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug(" Folder#: " + count);
-            logger.debug("        Id: " + folder.get_Id().toString());
-            logger.debug("      Name: " + folder.get_Name());
-            logger.debug("     Class: " + folder.getClassName());
-            logger.debug("     Owner: " + folder.get_Owner());
-            logger.debug("Permissions #: " + folder.get_Permissions().size());
 
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + folder, e);
+    public static void logRepositoryObjectProperties(Logger logger, EngineObject repositoryObject, FnObjectType fnObjectType, int count) {
+        String nameProperty = "Name";
+        switch (fnObjectType) {
+            case STORAGE_AREA:
+            case SECURITY_POLICY:
+            case SWEEP_POLICY:
+            case INSTANCE_SUBSCRIPTION:
+            case DOCUMENT_LIFECYCLE_POLICY:
+            case SECURITY_TEMPLATE:
+                nameProperty = "DisplayName";
+                break;
+            default:
+                break;
         }
-    }
-    
-    public static void logDocumentProperties(Logger logger, Document document, int count) {
         try {
             // Loggear los valores obtenidos
-            logger.debug("Document#: " + count);
-            logger.debug("           Id: " + document.get_Id().toString());
-            logger.debug("         Name: " + document.get_Name());
-            logger.debug("        Class: " + document.getClassName());
-            logger.debug("        Owner: " + document.get_Owner());
-            logger.debug("Permissions #: " + document.get_Permissions().size());
-
+            logger.debug(String.format("%s#: %d", fnObjectType.toString(), count));
+            logger.debug("        Id: " + repositoryObject.getProperties().getIdValue("Id").toString());
+            if (fnObjectType != FnObjectType.SWEEP) {
+                logger.debug("      Name: " + repositoryObject.getProperties().getStringValue(nameProperty));
+            }
+            logger.debug("     Class: " + repositoryObject.getClassName());
+            if (fnObjectType != FnObjectType.SECURITY_TEMPLATE){
+                logger.debug("     Owner: " + repositoryObject.getProperties().getStringValue("Owner"));
+                logger.debug("Permissions #: " + repositoryObject.getProperties().getDependentObjectListValue("Permissions").size());
+            } else {
+                logger.debug("Template Permissions #: " + repositoryObject.getProperties().getDependentObjectListValue("TemplatePermissions").size());
+            }
+            if (fnObjectType.equals(FnObjectType.CLASS_DEFINITION)){
+                logger.debug("D.I. Permissions #: " + repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions").size());
+            }
         } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + document, e);
-        }
-    }
-
-    public static void logCustomObjectProperties(Logger logger, CustomObject customObject, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Custom Object#: " + count);
-            logger.debug("            Id: " + customObject.get_Id().toString());
-            logger.debug("          Name: " + customObject.get_Name());
-            logger.debug("         Class: " + customObject.getClassName());
-            logger.debug("         Owner: " + customObject.get_Owner());
-            logger.debug(" Permissions #: " + customObject.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + customObject, e);
+            logger.error("Error loggeando entidad: " + repositoryObject, e);
         }
     }
 
-    public static void logClassProperties(Logger logger, ClassDefinition classDefinition, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Class Definition#: " + count);
-            logger.debug("               Id: " + classDefinition.get_Id().toString());
-            logger.debug("    Symbolic Name: " + classDefinition.get_SymbolicName());
-            logger.debug("            Class: " + classDefinition.getClassName());
-            logger.debug("            Owner: " + classDefinition.get_Owner());
-            logger.debug("    Permissions #: " + classDefinition.get_Permissions().size());
-            logger.debug("D I Permissions #: " + classDefinition.get_DefaultInstancePermissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + classDefinition, e);
-        }
-    }
-
-    public static void logAnnotationProperties(Logger logger, Annotation annotation, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug(" Annotation#: " + count);
-            logger.debug("        Id: " + annotation.get_Id().toString());
-            logger.debug("      Name: " + annotation.get_Name());
-            logger.debug("     Class: " + annotation.getClassName());
-            logger.debug("     Owner: " + annotation.get_Owner());
-            logger.debug("Permissions #: " + annotation.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + annotation, e);
-        }
-    }
-
-    public static void logPropertyTemplatesProperties(Logger logger, PropertyTemplate propertyTemplate, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug(" Property Template#: " + count);
-            logger.debug("        Id: " + propertyTemplate.get_Id().toString());
-            logger.debug("      Name: " + propertyTemplate.get_SymbolicName());
-            logger.debug("     Class: " + propertyTemplate.getClassName());
-            logger.debug("     Owner: " + propertyTemplate.get_Owner());
-            logger.debug("Permissions #: " + propertyTemplate.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + propertyTemplate, e);
-        }
-    }
-
-    public static void logChoiceListProperties(Logger logger, ChoiceList choiceList, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Choice List#: " + count);
-            logger.debug("         Id: " + choiceList.get_Id().toString());
-            logger.debug("       Name: " + choiceList.get_Name());
-            logger.debug("      Class: " + choiceList.getClassName());
-            logger.debug("      Owner: " + choiceList.get_Owner());
-            logger.debug("Permissions #: " + choiceList.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + choiceList, e);
-        }
-    }
-
-    public static void logEventProperties(Logger logger, Event event, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Event#: " + count);
-            logger.debug("         Id: " + event.get_Id().toString());
-            logger.debug("       Name: " + event.get_Name());
-            logger.debug("      Class: " + event.getClassName());
-            logger.debug("      Owner: " + event.get_Owner());
-            logger.debug("Permissions #: " + event.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + event, e);
-        }
-    }
-
-    public static void logStorageAreaProperties(Logger logger, StorageArea storageArea, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Storage Area#: " + count);
-            logger.debug("         Id: " + storageArea.get_Id().toString());
-            logger.debug("       Name: " + storageArea.get_DisplayName());
-            logger.debug("      Class: " + storageArea.getClassName());
-            logger.debug("      Owner: " + storageArea.get_Owner());
-            logger.debug("Permissions #: " + storageArea.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + storageArea, e);
-        }
-    }
-
-    public static void logStoragePolicyProperties(Logger logger, StoragePolicy storagePolicy, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Storage Policy#: " + count);
-            logger.debug("         Id: " + storagePolicy.get_Id().toString());
-            logger.debug("       Name: " + storagePolicy.get_Name());
-            logger.debug("      Class: " + storagePolicy.getClassName());
-            logger.debug("      Owner: " + storagePolicy.get_Owner());
-            logger.debug("Permissions #: " + storagePolicy.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + storagePolicy, e);
-        }
-    }
-
-    public static void logSecurityPolicyProperties(Logger logger, SecurityPolicy securityPolicy, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Security Policy#: " + count);
-            logger.debug("             Id: " + securityPolicy.get_Id().toString());
-            logger.debug("           Name: " + securityPolicy.get_Name());
-            logger.debug("          Class: " + securityPolicy.getClassName());
-            logger.debug("          Owner: " + securityPolicy.get_Owner());
-            logger.debug("  Permissions #: " + securityPolicy.get_Permissions().size());
-            logger.debug("Sec Templates #: " + securityPolicy.get_SecurityTemplates().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + securityPolicy, e);
-        }
-    }
-
-    public static void logSecurityTemplateProperties(Logger logger, int count, SecurityTemplate securityTemplate) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("- - - - - - - - - - ");
-            logger.debug("Security Template#: " + count);
-            logger.debug("                Id: " + securityTemplate.get_Id().toString());
-            logger.debug("      Display Name: " + securityTemplate.get_DisplayName());
-            logger.debug("             Class: " + securityTemplate.getClassName());
-            logger.debug("     Permissions #: " + securityTemplate.get_TemplatePermissions().size());
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + securityTemplate, e);
-        }
-    }
-
-    public static void logSubscriptionProperties(Logger logger, Subscription subscription, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Subscription#: " + count);
-            logger.debug("         Id: " + subscription.get_Id().toString());
-            logger.debug("       Name: " + subscription.get_DisplayName());
-            logger.debug("      Class: " + subscription.getClassName());
-            logger.debug("      Owner: " + subscription.get_Owner());
-            logger.debug("Permissions #: " + subscription.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + subscription, e);
-        }
-    }
-
-    public static void logSweepProperties(Logger logger, CmSweep sweep, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("       Sweep#: " + count);
-            logger.debug("           Id: " + sweep.get_Id().toString());
-            logger.debug("        Class: " + sweep.getClassName());
-            logger.debug("        Owner: " + sweep.get_Owner());
-            logger.debug("Permissions #: " + sweep.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + sweep, e);
-        }
-    }
-
-    public static void logSweepPolicyProperties(Logger logger, CmSweepPolicy sweepPolicy, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Sweep Policy#: " + count);
-            logger.debug("           Id: " + sweepPolicy.get_Id().toString());
-            logger.debug("         Name: " + sweepPolicy.get_DisplayName());
-            logger.debug("        Class: " + sweepPolicy.getClassName());
-            logger.debug("        Owner: " + sweepPolicy.get_Owner());
-            logger.debug("Permissions #: " + sweepPolicy.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + sweepPolicy, e);
-        }
-    }
-
-    public static void logTableDefinitionProperties(Logger logger, TableDefinition tableDefinition, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Table Definition#: " + count);
-            logger.debug("               Id: " + tableDefinition.get_Id().toString());
-            logger.debug("             Name: " + tableDefinition.get_Name());
-            logger.debug("            Class: " + tableDefinition.getClassName());
-            logger.debug("            Owner: " + tableDefinition.get_Owner());
-            logger.debug("    Permissions #: " + tableDefinition.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + tableDefinition, e);
-        }
-    }
-
-    public static void logAbstractPersistableProperties(Logger logger, CmAbstractPersistable abstractPersistable, int count) {
-        try {
-            // Loggear los valores obtenidos
-            logger.debug("Abstract Persistable#: " + count);
-            logger.debug("               Id: " + abstractPersistable.get_Id().toString());
-            logger.debug("             Name: " + abstractPersistable.get_Name());
-            logger.debug("            Class: " + abstractPersistable.getClassName());
-            logger.debug("            Owner: " + abstractPersistable.get_Owner());
-            logger.debug("    Permissions #: " + abstractPersistable.get_Permissions().size());
-
-        } catch (Exception e) {
-            logger.error("Error loggeando entidad: " + abstractPersistable, e);
-        }
-    }
-
-    public static void logPermisionValues(Logger logger, AccessPermission permission) 
+    public static void logPermisionValues(Logger logger, AccessPermission permission)
     {
     	 try {
          		logger.trace("	     GranteeName : " + permission.get_GranteeName());

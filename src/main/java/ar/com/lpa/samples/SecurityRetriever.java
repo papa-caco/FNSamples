@@ -1,30 +1,25 @@
 package ar.com.lpa.samples;
 
-import ar.com.lpa.samples.model.FnDbTable;
+import ar.com.lpa.samples.model.SecurableObject;
 import ar.com.lpa.samples.model.fnObjects.P8Realm;
-import ar.com.lpa.samples.repository.FnDbTableRepo;
+import ar.com.lpa.samples.repository.SecurableObjectRepo;
 import ar.com.lpa.samples.util.*;
 import org.apache.log4j.Logger;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import java.io.IOException;
 
-public class SecurityRetreiver {
-    private static final Logger logger = Logger.getLogger(SecurityRetreiver.class);
+public class SecurityRetriever {
+    private static final Logger logger = Logger.getLogger(SecurityRetriever.class);
     private static final P8Realm p8realm = new P8Realm();
-    private static final FnDbTableRepo fnDbTableRepo = new FnDbTableRepo();
 
     public static void main(String[] args) throws IOException {
-        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("db");
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        //EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("db");
         String configPath = "config.properties";
         ConfigLoader configLoader = new ConfigLoader(configPath);
         // Load attribute values from configuration file
-        SecurityRetreiver.p8realm.setConnectionCeUri(configLoader.getProperty("ceURI"));
-        SecurityRetreiver.p8realm.setConnectionUser(configLoader.getProperty("userName"));
-        SecurityRetreiver.p8realm.setConnectionPswd(configLoader.getProperty("password"));
+        p8realm.setConnectionCeUri(configLoader.getProperty("ceURI"));
+        p8realm.setConnectionUser(configLoader.getProperty("userName"));
+        p8realm.setConnectionPswd(configLoader.getProperty("password"));
         p8realm.setRealm(logger);
 
         String dbType = configLoader.getProperty("dbType");
@@ -59,20 +54,11 @@ public class SecurityRetreiver {
         String ownersCsvFile = configLoader.getProperty("OwnersCsvFile");
         String permissionsCsvFile = configLoader.getProperty("PermissionsCsvFile");
 
-        /*String usersJson = ResultExporter.expUsersToJsonOnConsole(p8realm.getRealmUsers().getLdapUsers());
-        if (usersJson != null) {
-            System.out.println(usersJson);
-        }*/
         ResultExporter.exportUsersToCsv(p8realm.getRealmUsers().getRealmUsers(), ldapUsersCsvFile);
-
-        /*String groupsJson = ResultExporter.expGroupsToJsonOnConsole(p8realm.getRealmGroups().getLdapGroups());
-        if (groupsJson != null) {
-            System.out.println(groupsJson);
-        }*/
         ResultExporter.exportGroupsToCsv(p8realm.getRealmGroups().getRealmGroups(), ldapGroupsCsvFile);
         switch (dbType) {
             case "SQLServer":
-                SQLServerOperations.retreiveSecurableObjects(dbHost, dbPort, databaseName, dbUserName, dbUserPswd, schemaName, tablesCsvFile, fnDbTableRepo);
+                SQLServerOperations.retreiveSecurableObjects(dbHost, dbPort, databaseName, dbUserName, dbUserPswd, schemaName, tablesCsvFile);
                 break;
             case "Oracle":
                 // TODO
@@ -81,66 +67,79 @@ public class SecurityRetreiver {
                 // TODO
                 break;
         }
-        for (FnDbTable fnDbTable : fnDbTableRepo.getFnDbTables()) {
-            switch (fnDbTable.getTableName()) {
-               case "Annotation":
+        for (SecurableObject securableObject : SecurableObjectRepo.getInstance().getSecurableObjects()) {
+            switch (securableObject.getTableName().toLowerCase()) {
+                case "annotation":
                     P8SecurityCollector.collectSecurityFromAnnotations(p8realm, objectStore, annotationSearch);
                     break;
-                case "GlobalPropertyDef":
+                case "globalpropertydef":
                     P8SecurityCollector.collectSecurityFromPropertyTemplates(p8realm, objectStore, propertyTemplateSearch);
                     break;
-                case "ClassDefinition":
+                case "classdefinition":
                     P8SecurityCollector.collectSecurityFromClassDefinitions(p8realm, objectStore, classSearch);
                     break;
-                case "Container":
+                case "container":
                     P8SecurityCollector.collectSecurityFromFolders(p8realm, objectStore, folderSearch);
                     break;
-                case "DocVersion":
+                case "docversion":
                     P8SecurityCollector.collectSecurityFromDocuments(p8realm, objectStore, documentSearch);
                     break;
-                case "Cvl":
+                case "cvl":
                     P8SecurityCollector.collectSecurityFromChoiceLists(p8realm, objectStore, choiceListSearch);
                     break;
-                case "Generic":
+                case "generic":
                     P8SecurityCollector.collectSecurityFromCustomObjects(p8realm, objectStore, customObjectSearch);
                     break;
-                case "StorageClass":
+                case "storageclass":
                     P8SecurityCollector.collectSecurityFromStoragePolicies(p8realm, objectStore, storagePolicySearch);
                     P8SecurityCollector.collectSecurityFromStorageAreas(p8realm, objectStore, storageAreaSearch);
                     break;
-                case "SecurityPolicy": //Include Security Templates
+                case "securitypolicy": //Include Security Templates
                     P8SecurityCollector.collectSecurityFromSecurityPolicies(p8realm, objectStore, securityPolicySearch);
                     break;
-                case "Event":
+                case "event":
                     P8SecurityCollector.collectSecurityFromEvents(p8realm, objectStore, eventSearch);
                     break;
-                case "Subscription":
-                    P8SecurityCollector.collectSecurityFromSubscriptions(p8realm, objectStore, subscriptionSearch);
+                case "subscription":
+                    P8SecurityCollector.collectSecurityFromClassSubscriptions(p8realm, objectStore, subscriptionSearch);
+                    P8SecurityCollector.collectSecurityFromEventActions(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromChangePreprocessorAction(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromContentConversionAction(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromDocumentClassificationAction(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromDocumentLifecycleAction(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromDocumentLifecyclePolicy(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromInstanceSubscription(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromRoleMembershipAction(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromSearchFunctionDefinition(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromSweepAction(p8realm, objectStore);
+                    P8SecurityCollector.collectSecurityFromTextIndexingPreprocessorAction(p8realm, objectStore);
                     break;
-                case "Sweep":
+                case "sweep":
                     P8SecurityCollector.collectSecurityFromSweeps(p8realm, objectStore, sweepSearch);
                     break;
-                case "SweepPolicy":
+                case "sweeppolicy":
                     P8SecurityCollector.collectSecurityFromSweepPolicies(p8realm, objectStore, sweepPolicySearch);
                     break;
-                case "TableDefinition":
+                case "tabledefinition":
                     P8SecurityCollector.collectSecurityFromTabledefinitions(p8realm, objectStore, tableDefinitionSearch);
                     break;
-                case "UT_ClbDownloadRecord":
+                case "ut_clbdownloadrecord":
                     P8SecurityCollector.collectSecurityFromAbstractsPersistable(p8realm, objectStore, "ClbDownloadRecord");
                     break;
-                case "UT_ClbSummaryData":
+                case "ut_clbsummarydata":
                     P8SecurityCollector.collectSecurityFromAbstractsPersistable(p8realm, objectStore, "ClbSummaryData");
                     break;
-                case "UT_CmCustomRoleBase":
+                case "ut_cmcustomrolebase":
                     P8SecurityCollector.collectSecurityFromAbstractsPersistable(p8realm, objectStore, "CmCustomRoleBase");
                     break;
                 default:
                     break;
             }
         }
-        P8SecurityCollector.exportPrincipalsToFiles(principalsJsonFile, principalsCsvFile);
+        P8SecurityCollector.exportPrincipalsToFiles(principalsJsonFile,principalsCsvFile);
         P8SecurityCollector.exportOwnersToCsv(ownersCsvFile);
         P8SecurityCollector.exportPermissionsToCsv(permissionsCsvFile);
     }
 }
+
+

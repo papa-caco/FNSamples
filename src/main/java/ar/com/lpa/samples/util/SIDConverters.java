@@ -1,8 +1,15 @@
 package ar.com.lpa.samples.util;
 
-public class SIDConverters 
+import ar.com.lpa.samples.testing.TestSIDConverters;
+
+public class SIDConverters
 {
-	public static Byte[] convertStringSID(String stringSid) 
+
+	public static String convertStringSIdToHexSId(String stringSId){
+		Byte[] binarySid = convertStringSID(stringSId);
+		return convertByteArrayToHexString(binarySid);
+    }
+	private static Byte[] convertStringSID(String stringSid)
 	{
 	    if (stringSid == null || !stringSid.startsWith("S-")) {
 	        throw new IllegalArgumentException("SID must begin with 'S-' and not NULL.");
@@ -82,7 +89,7 @@ public class SIDConverters
         return strSid.toString();
 	}
 	
-    public static Byte[] convertHexStringToByteArray(String hexString) 
+    public static Byte[] convertHexStringToByteArray(String hexString)
     {
         int length = hexString.length();
         Byte[] byteArray = new Byte[length / 2];
@@ -93,7 +100,7 @@ public class SIDConverters
         return byteArray;
     }
     
-    public static String convertByteArrayToHexString(Byte[] byteArray) 
+    private static String convertByteArrayToHexString(Byte[] byteArray)
     {
     	StringBuilder hexString = new StringBuilder();
         for (byte b : byteArray) {

@@ -41,13 +41,13 @@ public class FnAccessPermission {
     private PrincipalType principalType;
 
     @Column(name = "permissionSource")
-    private int permissionSource;
+    private String permissionSource;
 
     @Column(name = "accessMask")
     private int accessMask;
 
     @Column(name = "accessType")
-    private int accessType;
+    private String accessType;
 
     @Column(name = "inheritableDepth")
     private int inheritableDepth;
@@ -61,9 +61,9 @@ public class FnAccessPermission {
         this.fnObjectType = fnObjectType;
         this.granteeName = granteeName;
         this.principalType = PrincipalType.valueOf(accessPermission.get_GranteeType().toString());
-        this.permissionSource = accessPermission.get_PermissionSource().getValue();
+        this.permissionSource = accessPermission.get_PermissionSource().toString();
         this.accessMask = accessPermission.get_AccessMask();
-        this.accessType = accessPermission.get_AccessType().getValue();
+        this.accessType = accessPermission.get_AccessType().toString();
         this.inheritableDepth = accessPermission.get_InheritableDepth();
         this.status = 'N';
     }

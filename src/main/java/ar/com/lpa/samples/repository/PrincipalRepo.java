@@ -38,46 +38,48 @@ public class PrincipalRepo implements WithGlobalEntityManager {
 		return entityManager().createQuery("from Principal").getResultList();
 	}
 	public void createPrincipal(Principal principal){
-		try {
-			entityManager().getTransaction().begin();
-			entityManager().persist(principal);
-			entityManager().getTransaction().commit();
-		} catch (PersistenceException e) {
-			//e.printStackTrace();
-			entityManager().getTransaction().rollback();
-			throw new RuntimeException("An error has occurred persisting a new Principal, the operation cannot be completed", e);
-		} finally {
-			entityManager().close();
-		}
+		// Duplicated Principals are being checked in previous "create" methods
+			try {
+				entityManager().getTransaction().begin();
+				entityManager().persist(principal);
+				entityManager().getTransaction().commit();
+			} catch (PersistenceException e) {
+				//e.printStackTrace();
+				entityManager().getTransaction().rollback();
+				throw new RuntimeException("An error has occurred persisting a new Principal, the operation cannot be completed", e);
+			} finally {
+				entityManager().close();
+			}
 	}
 
 	public void updatePrincipal(Principal principal){
-		try {
-			entityManager().getTransaction().begin();
-			int id = entityManager().merge(principal).getIdPrincipal();
-			principal.setIdPrincipal(id);
-			entityManager().getTransaction().commit();
-		}
-		catch (PersistenceException e) {
-			//e.printStackTrace();
-			entityManager().getTransaction().rollback();
-			throw new RuntimeException("An error has occurred updating Principal, the operation cannot be completed", e);
-		}
-		finally {
-			entityManager().close();
+		if (existsPrincipalShortName(principal.getSamAccountName())) {
+			try {
+				entityManager().getTransaction().begin();
+				int id = entityManager().merge(principal).getIdPrincipal();
+				principal.setIdPrincipal(id);
+				entityManager().getTransaction().commit();
+			} catch (PersistenceException e) {
+				//e.printStackTrace();
+				entityManager().getTransaction().rollback();
+				throw new RuntimeException("An error has occurred updating Principal, the operation cannot be completed", e);
+			} finally {
+				entityManager().close();
+			}
 		}
 	}
 
 	public void deletePrincipal(Principal principal){
-		try {
-			entityManager().remove(principal);
-		} catch (PersistenceException e) {
-			//e.printStackTrace();
-			entityManager().getTransaction().rollback();
-			throw new RuntimeException("An error has occurred removing Principal, the operation cannot be completed", e);
-		}
-		finally {
-			entityManager().close();
+		if (existsPrincipalShortName(principal.getSamAccountName())) {
+			try {
+				entityManager().remove(principal);
+			} catch (PersistenceException e) {
+				//e.printStackTrace();
+				entityManager().getTransaction().rollback();
+				throw new RuntimeException("An error has occurred removing Principal, the operation cannot be completed", e);
+			} finally {
+				entityManager().close();
+			}
 		}
 	}
 
@@ -120,8 +122,10 @@ public class PrincipalRepo implements WithGlobalEntityManager {
 				String shortName = Utilities.extractShortName(permission.get_GranteeName());
 				this.addNewPrincipalFromShortName(permission.get_GranteeName(), shortName, principalType, p8realm);
 
-			} else {
+			} else if (permission.get_GranteeName().startsWith("CN") || permission.get_GranteeName().startsWith("#")) {
 				this.addNewPrincipalFromDn(permission.get_GranteeName(), principalType, p8realm);
+			} else {
+				logger.debug("Unrecognized user: " + permission.get_GranteeName() + " type: " + permission.get_GranteeType().toString());
 			}
 		}
 		P8Logger.logPermisionValues(logger, permission);
@@ -164,11 +168,23 @@ public class PrincipalRepo implements WithGlobalEntityManager {
 
 	public Principal getPrincipalByName(String principalName){
 		if (getPrincipals() == null || principalName == null) {
-			return null; // Manejo de valores nulos
+			return null; // null arguments
 		}
 		List<Principal> principals = getPrincipals().stream()
-				.filter(principal -> principalName.equals(principal.getName())).collect(Collectors.toList());
-		//System.out.println("SARASA 3 -->> " + principals.size());
+				.filter(principal -> principalName.equalsIgnoreCase(principal.getName())).collect(Collectors.toList());
+		if (!(principals.isEmpty())){
+			return principals.get(0);
+		} else {
+			return null;
+		}
+	}
+
+	public Principal getPrincipalBySamAccountName(String samAccountName){
+		if (getPrincipals() == null || samAccountName == null) {
+			return null; // null arguments
+		}
+		List<Principal> principals = getPrincipals().stream()
+				.filter(principal -> samAccountName.equalsIgnoreCase(principal.getSamAccountName())).collect(Collectors.toList());
 		if (!(principals.isEmpty())){
 			return principals.get(0);
 		} else {
@@ -188,7 +204,7 @@ public class PrincipalRepo implements WithGlobalEntityManager {
 	private boolean existsPrincipalDn(String dN) 
     {
         for (Principal principal : getPrincipals()) {
-            if (dN.equals(principal.getDistinguishedName())) {
+            if (dN.equalsIgnoreCase(principal.getDistinguishedName())) {
                 return true;
             }
         }
@@ -198,7 +214,7 @@ public class PrincipalRepo implements WithGlobalEntityManager {
     private boolean existsPrincipalShortName(String shortName) 
     {
         for (Principal principal : getPrincipals()) {
-            if (shortName.equals(principal.getSamAccountName())) {
+            if (shortName.equalsIgnoreCase(principal.getSamAccountName())) {
                 return true;
             }
         }
