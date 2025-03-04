@@ -6,7 +6,7 @@
     <persistence-unit name="db" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
 
-        <class>ar.com.lpa.samples.model.FnOwner</class>
+        <class>ar.com.lpa.ldapExchanger.model.FnOwner</class>
 
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.SQLServerDialect" />
@@ -20,7 +20,7 @@
             <property name="hibernate.show_sql" value="false" />
             <property name="hibernate.format_sql" value="true" />
             <property name="use_sql_comments" value="true" />
-            <property name="hibernate.hbm2ddl.auto" value="create-drop" />
+            <property name="hibernate.hbm2ddl.auto" value="update" />
             <!--- Supported values include 'create', 'create-drop', 'update', 'none' and 'validate' -->
             <property name="hibernate.event.merge.entity_copy_observer" value="allow" />
         </properties>
