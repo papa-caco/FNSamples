@@ -31,6 +31,10 @@ public class FnAccessPermission {
     @ManyToOne(cascade = CascadeType.MERGE)
     private Principal granteeName;
 
+    @JoinColumn(name ="idFnBatch")
+    @ManyToOne(cascade = CascadeType.MERGE)
+    private FnBatch fnBatch;
+
     @Column(name = "principalType")
     @NonNull
     @Enumerated(EnumType.STRING)
@@ -51,10 +55,11 @@ public class FnAccessPermission {
     @Column(name = "status")
     private char status;
 
-    public FnAccessPermission(String objectId, FnObjectType fnObjectType, Principal granteeName, AccessPermission accessPermission)
+    public FnAccessPermission(String objectId, FnObjectType fnObjectType, FnBatch fnBatch,Principal granteeName, AccessPermission accessPermission)
     {
         this.objectId = objectId;
         this.fnObjectType = fnObjectType;
+        this.fnBatch = fnBatch;
         this.granteeName = granteeName;
         this.principalType = PrincipalType.valueOf(accessPermission.get_GranteeType().toString());
         this.permissionSource = accessPermission.get_PermissionSource().toString();

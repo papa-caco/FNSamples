@@ -128,7 +128,7 @@ public class SecurableObjectRepo implements WithGlobalEntityManager {
                 tableName = "docversion";
                 break;
             case CLASS_DEFINITION:
-            case CLASS_DEFINITION_DI:
+            case CLASS_DEFINITION_DIP:
                 tableName = "classdefinition";
                 break;
             case PROPERTY_TEMPLATE:

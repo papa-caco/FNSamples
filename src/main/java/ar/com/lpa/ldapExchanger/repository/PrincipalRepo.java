@@ -27,7 +27,6 @@ public class PrincipalRepo implements WithGlobalEntityManager {
 	public static PrincipalRepo getInstance() {
 		if (instance == null) {
 			instance = new PrincipalRepo();
-
 		}
 		return instance;
 	}

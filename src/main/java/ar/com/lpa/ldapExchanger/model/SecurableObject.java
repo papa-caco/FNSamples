@@ -24,7 +24,7 @@ public class SecurableObject {
     private int lineCount;
 
     @Column(name = "fnObjectType")
-    @Enumerated(EnumType.STRING)git
+    @Enumerated(EnumType.STRING)
     private FnObjectType fnObjectType;
 
     @Column(name = "objectCount")

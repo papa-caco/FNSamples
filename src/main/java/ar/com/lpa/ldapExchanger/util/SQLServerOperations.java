@@ -1,5 +1,7 @@
 package ar.com.lpa.ldapExchanger.util;
 
+import ar.com.lpa.ldapExchanger.model.FnObjectType;
+import ar.com.lpa.ldapExchanger.repository.BatchRepo;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,13 +28,23 @@ public class SQLServerOperations {
             // Paso 3: Consultar la tabla temporal y guardar resultados
             queryTemporaryTableToCsv(dbConnection, csvFilePath);
             queryTempToSecurableObjectRepo(dbConnection);
-
-
         } catch (Exception e) {
             //e.printStackTrace();
         } finally {
             closeDbConnection(dbConnection);
         }
+    }
+
+    public static void createFolderBatches(String dbHost, String dbPort, String dbName, String dbUserName, String dbUserPswd, String schemaName,int initialBatchNumber,int batchSize, Logger logger){
+        Connection dbConnection = openDbConnection(dbHost,dbPort, dbName,dbUserName, dbUserPswd);
+        updateContainerLockTimeOutValues(dbConnection, dbName, schemaName, initialBatchNumber, batchSize, logger);
+        closeDbConnection(dbConnection);
+    }
+
+    public static void createDocumentBatches(String dbHost, String dbPort, String dbName, String dbUserName, String dbUserPswd, String schemaName,int initialBatchNumber,int batchSize, Logger logger){
+        Connection dbConnection = openDbConnection(dbHost,dbPort, dbName,dbUserName, dbUserPswd);
+        updateDocversionLockTimeOutValues(dbConnection, dbName, schemaName, initialBatchNumber, batchSize, logger);
+        closeDbConnection(dbConnection);
     }
 
     private static void createTemporaryTable(Connection connection) throws Exception {
@@ -101,6 +113,62 @@ public class SQLServerOperations {
         try (Statement stmt = connection.createStatement();
              ResultSet resultSet = stmt.executeQuery(querySQL)) {
             ResultExporter.exportSelectToSecurableObjectRepo(resultSet);
+        }
+    }
+
+    private static void updateContainerLockTimeOutValues(Connection connection, String dbName, String schemaName,int initialBatchNumber,int batchSize, Logger logger){
+        String updateSQL = "UPDATE " + dbName + "." + schemaName + ".Container SET lock_timeout = ? WHERE object_id IN (SELECT TOP(?) object_id FROM "
+                + dbName + "." + schemaName + ".Container WHERE lock_timeout IS NULL ORDER BY create_date DESC);";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateSQL)) {
+            int currentBatchNumber = initialBatchNumber;
+            int rowsUpdated;
+            do {
+                pstmt.setInt(1, currentBatchNumber);
+                pstmt.setInt(2, batchSize);
+                rowsUpdated = pstmt.executeUpdate();
+
+                if (rowsUpdated > 0) {
+                    logger.debug("Folder Batch#: " + currentBatchNumber + " contains " + rowsUpdated + " folders.");
+                    BatchRepo.getInstance().createFnBatch(FnObjectType.FOLDER, currentBatchNumber, rowsUpdated);
+                    currentBatchNumber++;
+                }
+            } while (rowsUpdated > 0);
+            int batchesCreated = currentBatchNumber - initialBatchNumber;
+            if (batchesCreated > 0){
+                logger.info(String.format("%d Folder Batches created successfully", batchesCreated));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error updating Container row", e);
+        }
+    }
+
+    private static void updateDocversionLockTimeOutValues(Connection connection, String dbName, String schemaName,int initialBatchNumber,int batchSize, Logger logger){
+        String updateSQL = "UPDATE " + dbName + "." + schemaName + ".Docversion SET lock_timeout = ? WHERE object_id IN (SELECT TOP(?) object_id FROM "
+                + dbName + "." + schemaName + ".Docversion WHERE lock_timeout IS NULL ORDER BY create_date DESC);";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateSQL)) {
+            int currentBatchNumber = initialBatchNumber;
+            int rowsUpdated;
+            do {
+                pstmt.setInt(1, currentBatchNumber);
+                pstmt.setInt(2, batchSize);
+                rowsUpdated = pstmt.executeUpdate();
+
+                if (rowsUpdated > 0) {
+                    logger.debug("Document Batch#: " + currentBatchNumber + " contains " + rowsUpdated + " documents.");
+                    BatchRepo.getInstance().createFnBatch(FnObjectType.DOCUMENT, currentBatchNumber, rowsUpdated);
+                    currentBatchNumber++;
+                }
+            } while (rowsUpdated > 0);
+            int batchesCreated = currentBatchNumber - initialBatchNumber;
+            if (batchesCreated > 0){
+                logger.info(String.format("%d Document Batches created successfully", batchesCreated));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error updating DocVersion row", e);
         }
     }
 

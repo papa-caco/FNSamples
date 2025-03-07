@@ -3,6 +3,7 @@ package ar.com.lpa.ldapExchanger.repository;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.filenet.api.collection.UserSet;
 import com.filenet.api.constants.PrincipalSearchAttribute;
@@ -146,6 +147,10 @@ public class RealmUsersRepo {
 			}
 		}
 		return name;
+	}
+
+	public boolean existsRealmUserByName(String name){
+		return this.realmUsers.stream().filter(u -> u.get_Name().equalsIgnoreCase(name)).count() == 1;
 	}
  }
 
