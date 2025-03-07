@@ -15,18 +15,19 @@ import java.util.concurrent.Executors;
 import  ar.com.lpa.ldapExchanger.util.P8SecurityCollector;
 
 public class SecurityRetriever {
+
+    private static final int THREAD_POOL_SIZE = 2;
     private static final Logger logger = Logger.getLogger(SecurityRetriever.class);
     private static final P8Realm p8realm = new P8Realm();
     private static final String configPath = "config.properties";
 
-    private static final int THREAD_POOL_SIZE = 1;//Runtime.getRuntime().availableProcessors(); // Auto Adjust according to CPU resources (8 in this computer)
 
     private static ConfigLoader configLoader(){
         return new ConfigLoader(configPath);
     }
 
     private static void setRealmConnection() throws IOException {
-        System.out.println("Thread Pool Size: " + THREAD_POOL_SIZE);
+
         String fnAdmin = configLoader().getProperty("fnAdmin");
         p8realm.setConnectionCeUri(configLoader().getProperty("ceURI"));
         p8realm.setConnectionUser(fnAdmin);
@@ -140,28 +141,13 @@ public class SecurityRetriever {
                     break;
             }
         }
+        logger.info("All Owners & Permissions retrieved from Engine Objects");
     }
 
     private static void retrieveOwnersAndPermissionsFromFoldersAndDocuments(String objectStore){
-        /*BatchRepo.getInstance().getFnBatchesByBatchStatus('N').parallelStream().forEach(fnBatch -> {
-            if (!BatchRepo.getInstance().getFnBatchesByBatchStatus('R').isEmpty()){
-                PermissionRepo.getInstance().deleteFnAccessPermissionsByBatchNumber(fnBatch.getBatchNumber());
-                OwnerRepo.getInstance().deleteOwnersByBatchNumber(fnBatch.getBatchNumber());
-            }
-            switch (fnBatch.getBatchType()) {
-                case FOLDER:
-                    P8SecurityCollector.collectSecurityFromFolders(p8realm, objectStore, "Select * FROM Folder WHERE LockTimeout=" + fnBatch.getBatchNumber(),fnBatch);
-                    break;
-                case DOCUMENT:
-                    P8SecurityCollector.collectSecurityFromDocuments(p8realm, objectStore, "Select * FROM Document WHERE LockTimeout=" + fnBatch.getBatchNumber(), fnBatch);
-                    break;
-            }
-        });*/
         List<FnBatch> fnBatches = BatchRepo.getInstance().getFnBatchesByBatchStatus('N');
-        ExecutorService executor = Executors.newFixedThreadPool(1);
 
         for (FnBatch fnBatch : fnBatches) {
-            executor.submit(() -> {
                 if (!BatchRepo.getInstance().getFnBatchesByBatchStatus('R').isEmpty()){
                     PermissionRepo.getInstance().deleteFnAccessPermissionsByBatchNumber(fnBatch.getBatchNumber());
                     OwnerRepo.getInstance().deleteOwnersByBatchNumber(fnBatch.getBatchNumber());
@@ -178,9 +164,8 @@ public class SecurityRetriever {
                     default:
                         break;
                 }
-            });
         }
-        executor.shutdown(); // No acepta más tareas después de este punto
+        logger.info("All Owners & Permissions retrieved from Documents and Folders");
     }
 
     private static void exportPrincipalsOwnersAndPermissions() throws IOException {

@@ -98,7 +98,7 @@ public class SecurableObjectRepo implements WithGlobalEntityManager {
         return result;
     }
 
-    private boolean existsSecurableObject(String tableName){
+    public boolean existsSecurableObject(String tableName){
         for (SecurableObject securableObject : getSecurableObjects()){
             if (tableName.equalsIgnoreCase(securableObject.getTableName())){
                 return true;

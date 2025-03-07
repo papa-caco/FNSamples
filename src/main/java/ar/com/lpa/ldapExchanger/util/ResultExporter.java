@@ -82,13 +82,20 @@ public class ResultExporter {
 
     public static void exportSelectToSecurableObjectRepo(ResultSet resultSet) throws SQLException {
         // Escribir filas
+        int count = 0;
         while (resultSet.next()) {
             String tableName = resultSet.getString("table_name");
             int lineCount = resultSet.getInt("row_count");
             int securityIdCount = resultSet.getInt("security_id_count");
-            SecurableObject securableObject = new SecurableObject(tableName, lineCount, securityIdCount);
-            SecurableObjectRepo.getInstance().createSecurableObject(securableObject);
+            if (!tableName.equalsIgnoreCase("ConversionSettings") && !tableName.equalsIgnoreCase("SweepRelationship") && !tableName.equalsIgnoreCase("RecoveryBin")){
+                if(!SecurableObjectRepo.getInstance().existsSecurableObject(tableName)){
+                    SecurableObject securableObject = new SecurableObject(tableName, lineCount, securityIdCount);
+                    SecurableObjectRepo.getInstance().createSecurableObject(securableObject);
+                }
+                count++;
+            }
         }
+        logger.info(String.format("%d Types of Engine Objects found in Object Store", count));
     }
 
     public static void exportUsersToCsv(List<User> users, String filePath) throws IOException {

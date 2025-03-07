@@ -15,12 +15,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 @Getter
 @Setter
 public class P8SecurityCollector
 {
+    //private static final int THREAD_POOL_SIZE = 1;//Runtime.getRuntime().availableProcessors();
 	private static final Logger logger = Logger.getLogger(P8SecurityCollector.class);
 
     private static String fnAdmin = null;
@@ -204,7 +207,7 @@ public class P8SecurityCollector
 
     private static void collectSecurityFromRepositoryObjects(P8Realm p8realm,String osName, String objectSearch, FnObjectType fnObjectType, FnBatch fnBatch){
         try{
-            //logger.info(String.format("Collecting Security from %s - Object Store: %s",fnObjectType.toString() ,osName));
+            logger.info(String.format("Collecting Security from %s - Object Store: %s",fnObjectType.toString() ,osName));
             IndependentObjectSet independentObjectSet = P8ObjectSearch.getFnObjectsFromSearch(p8realm,logger,osName, objectSearch);
             if(!(independentObjectSet.isEmpty())){
                 int count=0;
@@ -242,13 +245,16 @@ public class P8SecurityCollector
                                 collectPermissionsFromSecurityTemplateList(p8realm, fnBatch, securityTemplateList);
                             }
                         }
+
                     } while (it.hasNext());
+
                 }
                 int batchNumber = 0;
                 if (fnObjectType == FnObjectType.DOCUMENT || fnObjectType == FnObjectType.FOLDER){
                     batchNumber = extractLockTimeoutValue(objectSearch);
                 }
                 updateSecurableObjectsAndBatchesStatus(fnObjectType, count, batchNumber ,securityTemplatescount);
+
             }
             else logger.info(String.format("No %s were found!", fnObjectType));
         }

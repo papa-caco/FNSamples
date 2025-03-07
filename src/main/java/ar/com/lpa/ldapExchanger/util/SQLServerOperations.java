@@ -16,11 +16,9 @@ public class SQLServerOperations {
     private static final Logger logger = Logger.getLogger(SQLServerOperations.class);
 
     public static void retreiveSecurableObjects(String dbHost, String dbPort, String dbName, String dbUserName, String dbUserPswd, String schemaName, String csvFilePath) {
+        // Conexión a la base de datos
         Connection dbConnection = openDbConnection(dbHost,dbPort, dbName,dbUserName, dbUserPswd);
-
         try {
-            // Conexión a la base de datos
-            logger.info(String.format("Successfully connected to database %s.", dbName));
             // Paso 1: Crear la tabla temporal
             createTemporaryTable(dbConnection);
             // Paso 2: Ejecutar el cursor
@@ -135,7 +133,9 @@ public class SQLServerOperations {
             } while (rowsUpdated > 0);
             int batchesCreated = currentBatchNumber - initialBatchNumber;
             if (batchesCreated > 0){
-                logger.info(String.format("%d Folder Batches created successfully", batchesCreated));
+                logger.info(String.format("%d Folder batches created successfully", batchesCreated));
+            } else {
+                logger.info("There were no new Folder batches to create");
             }
 
         } catch (SQLException e) {
@@ -164,6 +164,8 @@ public class SQLServerOperations {
             int batchesCreated = currentBatchNumber - initialBatchNumber;
             if (batchesCreated > 0){
                 logger.info(String.format("%d Document Batches created successfully", batchesCreated));
+            } else {
+                logger.info("There were no new Document batches to create");
             }
 
         } catch (SQLException e) {
