@@ -8,19 +8,16 @@ import ar.com.lpa.ldapExchanger.repository.*;
 import ar.com.lpa.ldapExchanger.util.*;
 import org.apache.log4j.Logger;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import  ar.com.lpa.ldapExchanger.util.P8SecurityCollector;
 
 public class SecurityRetriever {
 
-    private static final int THREAD_POOL_SIZE = 2;
     private static final Logger logger = Logger.getLogger(SecurityRetriever.class);
     private static final P8Realm p8realm = new P8Realm();
     private static final String configPath = "config.properties";
-
 
     private static ConfigLoader configLoader(){
         return new ConfigLoader(configPath);
@@ -59,7 +56,7 @@ public class SecurityRetriever {
         if (maxDocumentBatchNumber > 0){
             documentBatchNumber = maxDocumentBatchNumber + 1;
         }
-
+        logger.info("------------------ Starting Security Retrieve Process ------------------");
         switch (dbType) {
             case "SQLServer":
                 SQLServerOperations.retreiveSecurableObjects(dbHost, dbPort, databaseName, dbUserName, dbUserPasswd, schemaName, tablesCsvFile);
@@ -76,7 +73,9 @@ public class SecurityRetriever {
     }
 
     private static void retrieveOwnersAndPermissionsFromEngineObjects(String objectStore){
-        P8SecurityCollector.setFnAdmin(configLoader().getProperty("fnAdmin"));
+        if (P8SecurityCollector.getFnAdmin() == null){
+            P8SecurityCollector.setFnAdmin(configLoader().getProperty("fnAdmin"));
+        }
         P8SecurityCollector.addFnAdminAsPrincipal(p8realm);
         for (SecurableObject securableObject : SecurableObjectRepo.getInstance().getSecurableObjectsByProcessStatus('N')) {
             switch (securableObject.getTableName().toLowerCase()) {
@@ -128,6 +127,9 @@ public class SecurityRetriever {
                 case "tabledefinition":
                     P8SecurityCollector.collectSecurityFromTabledefinitions(p8realm, objectStore, configLoader().getProperty("tableDefinitionSearch"),null);
                     break;
+                case "roleobject":
+                    P8SecurityCollector.collectSecurityFromRoles(p8realm, objectStore, configLoader().getProperty("clbRoleSearch"),null);
+                    break;
                 case "ut_clbdownloadrecord":
                     P8SecurityCollector.collectSecurityFromAbstractsPersistable(p8realm, objectStore, "ClbDownloadRecord",null);
                     break;
@@ -144,28 +146,38 @@ public class SecurityRetriever {
         logger.info("All Owners & Permissions retrieved from Engine Objects");
     }
 
-    private static void retrieveOwnersAndPermissionsFromFoldersAndDocuments(String objectStore){
-        List<FnBatch> fnBatches = BatchRepo.getInstance().getFnBatchesByBatchStatus('N');
-
-        for (FnBatch fnBatch : fnBatches) {
-                if (!BatchRepo.getInstance().getFnBatchesByBatchStatus('R').isEmpty()){
+    private static void retrieveOwnersAndPermissionsFromFoldersAndDocuments(String objectStore, FnObjectType batchType, int initialBatch, int finalBatch){
+        if (P8SecurityCollector.getFnAdmin() == null){
+            P8SecurityCollector.setFnAdmin(configLoader().getProperty("fnAdmin"));
+        }
+        List<FnBatch> fnBatches = new ArrayList<>();
+        String objectSearch = null;
+        if (batchType == FnObjectType.FOLDER) {
+            fnBatches = BatchRepo.getInstance().getBatchesByTypeAndBatchNumber(FnObjectType.FOLDER, initialBatch, finalBatch);
+            objectSearch = "Select * FROM Folder WHERE LockTimeout=";
+            int count = 0;
+            for (FnBatch fnBatch : fnBatches) {
+                if (fnBatch.getBatchStatus() == 'N'){
                     PermissionRepo.getInstance().deleteFnAccessPermissionsByBatchNumber(fnBatch.getBatchNumber());
                     OwnerRepo.getInstance().deleteOwnersByBatchNumber(fnBatch.getBatchNumber());
+                    String search = objectSearch + fnBatch.getBatchNumber();
+                    P8SecurityCollector.collectSecurityFromFolders(p8realm, objectStore, search, fnBatch);
+                    logger.info(String.format("Owners & Permissions retrieved from %s Batch #%d", batchType, fnBatch.getBatchNumber()));
                 }
-                switch (fnBatch.getBatchType()) {
-                    case FOLDER:
-                        String folderSearch = "Select * FROM Folder WHERE LockTimeout=" + fnBatch.getBatchNumber();
-                        P8SecurityCollector.collectSecurityFromFolders(p8realm, objectStore, folderSearch, fnBatch);
-                        break;
-                    case DOCUMENT:
-                        String documentSearch = "Select * FROM Document WHERE LockTimeout=" + fnBatch.getBatchNumber();
-                        P8SecurityCollector.collectSecurityFromDocuments(p8realm, objectStore, documentSearch, fnBatch);
-                        break;
-                    default:
-                        break;
+            }
+        } else if (batchType == FnObjectType.DOCUMENT) {
+            fnBatches = BatchRepo.getInstance().getBatchesByTypeAndBatchNumber(FnObjectType.DOCUMENT, initialBatch, finalBatch);
+            objectSearch = "Select * FROM Document WHERE LockTimeout=";
+            for (FnBatch fnBatch : fnBatches) {
+                if (fnBatch.getBatchStatus() == 'N'){
+                    PermissionRepo.getInstance().deleteFnAccessPermissionsByBatchNumber(fnBatch.getBatchNumber());
+                    OwnerRepo.getInstance().deleteOwnersByBatchNumber(fnBatch.getBatchNumber());
+                    String search = objectSearch + fnBatch.getBatchNumber();
+                    P8SecurityCollector.collectSecurityFromDocuments(p8realm, objectStore, search, fnBatch);
+                    logger.info(String.format("Owners & Permissions retrieved from %s Batch #%d", batchType, fnBatch.getBatchNumber()));
                 }
+            }
         }
-        logger.info("All Owners & Permissions retrieved from Documents and Folders");
     }
 
     private static void exportPrincipalsOwnersAndPermissions() throws IOException {
@@ -175,10 +187,53 @@ public class SecurityRetriever {
     }
 
     public static void main(String[] args) throws IOException {
+        if (args.length < 2) {
+            logger.error("Incorrect Use. Enter at least: <objectStore> <retrieveType>");
+            return;
+        }
+        String objectStore = args[0];;
+        char retrieveType = args[1].charAt(0);
+        Integer initialBatch = null;
+        Integer finalBatch = null;
+        if (retrieveType == 'D' || retrieveType == 'F') {
+            if (args.length < 3) {
+                initialBatch = 1;
+                finalBatch = 10000000;
+            } else if (args.length < 4){
+                finalBatch = 10000000;
+                try {
+                    initialBatch = Integer.parseInt(args[2]);
+                } catch (NumberFormatException e) {
+                    logger.error("Error: <finalBatch> must be Integer values.");
+                    return;
+                }
+            } else {
+                try {
+                    initialBatch = Integer.parseInt(args[2]);
+                    finalBatch = Integer.parseInt(args[3]);
+                } catch (NumberFormatException e) {
+                    logger.error("Error: <initialBatch> & <finalBatch> must be Integer values.");
+                    return;
+                }
+            }
+        } else if (retrieveType != 'E') {
+            logger.error("Error: retrieveType must be 'D', 'F' or 'E'.");
+            return;
+        }
         setRealmConnection();
         obtainSecurableObjectsFromObjectStoreDB();
-        retrieveOwnersAndPermissionsFromEngineObjects(configLoader().getProperty("objectStore"));
-        retrieveOwnersAndPermissionsFromFoldersAndDocuments(configLoader().getProperty("objectStore"));
+        switch (retrieveType){
+            case 'E':
+                retrieveOwnersAndPermissionsFromEngineObjects(objectStore);
+                break;
+            case 'F':
+                retrieveOwnersAndPermissionsFromFoldersAndDocuments(objectStore, FnObjectType.FOLDER , initialBatch, finalBatch);
+                break;
+            case 'D':
+                retrieveOwnersAndPermissionsFromFoldersAndDocuments(objectStore, FnObjectType.DOCUMENT , initialBatch, finalBatch);
+                break;
+        }
         exportPrincipalsOwnersAndPermissions();
     }
+
 }

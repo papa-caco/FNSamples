@@ -55,8 +55,8 @@ public class PrincipalRetriever {
         String principalsJsonFile = configLoader.getProperty("PrincipalsJsonFile");
 
         ResultExporter.exportUsersToCsv(RealmUsersRepo.getInstance().getRealmUsers(), ldapUsersCsvFile);
-
         ResultExporter.exportGroupsToCsv(RealmGroupsRepo.getInstance().getRealmGroups(),ldapGroupsCsvFile );
+
         if(dbType.equals("SQLServer")){
             SQLServerOperations.retreiveSecurableObjects(dbHost, dbPort, databaseName,dbUserName,dbUserPswd,schemaName,tablesCsvFile);
         } else if (dbType.equals("Oracle")){

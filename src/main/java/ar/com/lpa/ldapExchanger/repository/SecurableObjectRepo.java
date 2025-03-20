@@ -28,6 +28,23 @@ public class SecurableObjectRepo implements WithGlobalEntityManager {
         return entityManager().createQuery("from SecurableObject").getResultList();
     }
 
+    public SecurableObject getSecurableObjectByTableName(String tableName){
+        SecurableObject securableObject = null;
+        if (existsSecurableObject(tableName)){
+            securableObject = this.getSecurableObjects().stream().filter(s -> s.getTableName().equals(tableName)).collect(Collectors.toList()).get(0);
+        }
+        return securableObject;
+    }
+
+    public boolean securableObjectHasDifferences(String tableName, int lineCount){
+        boolean result = false;
+        if (existsSecurableObject(tableName)){
+            int actualCount = this.getSecurableObjects().stream().filter(s -> s.getTableName().equalsIgnoreCase(tableName)).collect(Collectors.toList()).get(0).getLineCount();
+            if (actualCount != lineCount) result = true;
+        }
+        return result;
+    }
+
     public void createSecurableObject(SecurableObject securableObject){
         if (!existsSecurableObject(securableObject.getTableName())) {
             try {
@@ -83,12 +100,14 @@ public class SecurableObjectRepo implements WithGlobalEntityManager {
         SecurableObject result = null;
         String tableName = this.getTableNameByFnObjectType(fnObjectType);
         for (SecurableObject securableObject: this.getSecurableObjects()){
-            if (securableObject.getTableName().equalsIgnoreCase(tableName)){
-                if (securableObject.getFnObjectType() == null){
+            if (securableObject.getTableName().equalsIgnoreCase(tableName)) {
+                if (securableObject.getFnObjectType() == null) {
                     securableObject.setFnObjectType(fnObjectType);
                     updateSecurableObject(securableObject);
                     result = securableObject;
-                } else if  (securableObject.getFnObjectType() != fnObjectType){
+                } else if (securableObject.getFnObjectType() == fnObjectType) {
+                    result = securableObject;
+                } else {
                     SecurableObject newObject = this.duplicateSecurableObject(securableObject, fnObjectType);
                     createSecurableObject(newObject);
                     result = newObject;
@@ -173,6 +192,9 @@ public class SecurableObjectRepo implements WithGlobalEntityManager {
                 break;
             case CUSTOM_ROLE_BASE:
                 tableName = "ut_cmcustomrolebase";
+                break;
+            case ROLE:
+                tableName = "roleObject";
                 break;
             case CLASS_SUBSCRIPTION:
             case EVENT_ACTION:

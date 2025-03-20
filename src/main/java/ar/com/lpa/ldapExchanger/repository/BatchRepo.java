@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 import org.uqbarproject.jpa.java8.extras.WithGlobalEntityManager;
 
 import javax.persistence.PersistenceException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,6 +82,22 @@ public class BatchRepo implements WithGlobalEntityManager {
 
     public List<FnBatch> getFnBatchesByBatchStatus(char status){
         return this.getBatches().stream().filter(b -> b.getBatchStatus() == status).collect(Collectors.toList());
+    }
+
+    private List<FnBatch> getFnBatchesByType(FnObjectType fnObjectType){
+        return this.getBatches().stream().filter(b -> b.getBatchType() == fnObjectType).collect(Collectors.toList());
+    }
+
+    public List<FnBatch> getBatchesByTypeAndBatchNumber(FnObjectType fnObjectType, int initialBatch, int finalBatch){
+        int startIndex = initialBatch - 1;
+        int endIndex = finalBatch - 1;
+
+        if (startIndex < 0 || endIndex < 0 || startIndex > this.getFnBatchesByType(fnObjectType).size() || startIndex > endIndex) {
+            throw new IllegalArgumentException("Batch number range out of limits.");
+        } else if (endIndex > this.getFnBatchesByType(fnObjectType).size()) {
+            endIndex = this.getFnBatchesByType(fnObjectType).size() - 1;
+        }
+        return new ArrayList<>(this.getFnBatchesByType(fnObjectType).subList(startIndex, endIndex + 1));
     }
 
     public FnBatch getFnBatchByNumberAndType(FnObjectType batchType, int batchNumber){

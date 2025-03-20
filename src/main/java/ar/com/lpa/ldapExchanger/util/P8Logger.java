@@ -19,6 +19,7 @@ public class P8Logger {
             case INSTANCE_SUBSCRIPTION:
             case DOCUMENT_LIFECYCLE_POLICY:
             case SECURITY_TEMPLATE:
+            case ROLE:
                 nameProperty = "DisplayName";
                 break;
             default:

@@ -15,21 +15,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 
 @Getter
 @Setter
 public class P8SecurityCollector
 {
-    //private static final int THREAD_POOL_SIZE = 1;//Runtime.getRuntime().availableProcessors();
 	private static final Logger logger = Logger.getLogger(P8SecurityCollector.class);
 
+    @Getter
     private static String fnAdmin = null;
 
     public static void setFnAdmin(String userName){
         fnAdmin = userName;
+    }
+
+    public static void collectSecurityFromFolders(P8Realm p8realm, String osName, String folderSearch, FnBatch fnBatch) {
+        if (folderSearch == null) {
+            folderSearch = "Select * FROM Folder where Id IS NOT NULL";
+        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, folderSearch, FnObjectType.FOLDER, fnBatch);
     }
 
     public static void collectSecurityFromDocuments(P8Realm p8realm, String osName, String documentSearch, FnBatch fnBatch) {
@@ -46,12 +50,7 @@ public class P8SecurityCollector
         collectSecurityFromRepositoryObjects(p8realm, osName, customObjectSearch, FnObjectType.CUSTOM_OBJECT, fnBatch);
     }
 
-    public static void collectSecurityFromFolders(P8Realm p8realm, String osName, String folderSearch, FnBatch fnBatch) {
-        if (folderSearch == null) {
-            folderSearch = "Select * FROM Folder where Id IS NOT NULL";
-        }
-        collectSecurityFromRepositoryObjects(p8realm, osName, folderSearch, FnObjectType.FOLDER, fnBatch);
-    }
+
 
     public static void collectSecurityFromClassDefinitions(P8Realm p8realm, String osName, String classSearch, FnBatch fnBatch) {
         if (classSearch == null) {
@@ -137,6 +136,13 @@ public class P8SecurityCollector
         collectSecurityFromRepositoryObjects(p8realm, osName, tableDefinitionSearch, FnObjectType.TABLE_DEFINITION, fnBatch);
     }
 
+    public static void collectSecurityFromRoles(P8Realm p8realm,String osName, String clbRoleSearch, FnBatch fnBatch) {
+        if (clbRoleSearch == null) {
+            clbRoleSearch = "Select * FROM CmRole where Id IS NOT NULL";
+        }
+        collectSecurityFromRepositoryObjects(p8realm, osName, clbRoleSearch, FnObjectType.ROLE, fnBatch);
+    }
+
     public static void collectSecurityFromAbstractsPersistable(P8Realm p8realm,String osName, String abstractPersistableType, FnBatch fnBatch) {
         if (abstractPersistableType != null) {
             String abstractPersistableSearch = "select * from " + abstractPersistableType + " where Id IS NOT NULL";
@@ -213,48 +219,43 @@ public class P8SecurityCollector
                 int count=0;
                 int securityTemplatescount = 0;
                 Iterator it=independentObjectSet.iterator();
-                if (it.hasNext()) {
-                    do {
-                        count++;
-                        EngineObject repositoryObject = (EngineObject) it.next();
-                        String owner = repositoryObject.getProperties().getStringValue("Owner");
-                        if (owner == null || !(RealmUsersRepo.getInstance().existsRealmUserByName(owner))){
-                            owner = PrincipalRepo.getInstance().getPrincipalBySamAccountName(fnAdmin).getName();
-                        } else {
-                            PrincipalRepo.getInstance().addPrincipalFromObjectOwner(owner, p8realm);
+                do {
+                    count++;
+                    EngineObject repositoryObject = (EngineObject) it.next();
+                    String owner = repositoryObject.getProperties().getStringValue("Owner");
+                    if (owner == null || !(RealmUsersRepo.getInstance().existsRealmUserByName(owner))){
+                        owner = PrincipalRepo.getInstance().getPrincipalBySamAccountName(fnAdmin).getName();
+                    } else {
+                        PrincipalRepo.getInstance().addPrincipalFromObjectOwner(owner, p8realm);
+                    }
+                    Principal newOwner = PrincipalRepo.getInstance().getPrincipalByName(owner);
+                    if (OwnerRepo.getInstance().addOwnerFromRepositoryObject(repositoryObject, newOwner, fnObjectType, fnBatch)) {
+                        P8Logger.logRepositoryObjectProperties(logger, repositoryObject, fnObjectType, count);
+                    }
+                    String objectId = repositoryObject.getProperties().getIdValue("Id").toString();
+                    if (!(repositoryObject.getProperties().getDependentObjectListValue("Permissions").isEmpty())) {
+                        AccessPermissionList permissionList = (AccessPermissionList) repositoryObject.getProperties().getDependentObjectListValue("Permissions");
+                        collectPermissionsFromRepositoryObjects(p8realm, fnObjectType, fnBatch,permissionList, objectId);
+                    }
+                    if (fnObjectType.equals(FnObjectType.CLASS_DEFINITION)){
+                        if (!(repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions").isEmpty())) {
+                            AccessPermissionList defaultInstancePermissionList = (AccessPermissionList) repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions");
+                            collectPermissionsFromRepositoryObjects(p8realm, FnObjectType.CLASS_DEFINITION_DIP, fnBatch,defaultInstancePermissionList, objectId);
                         }
-                        Principal newOwner = PrincipalRepo.getInstance().getPrincipalByName(owner);
-                        if (OwnerRepo.getInstance().addOwnerFromRepositoryObject(repositoryObject, newOwner, fnObjectType, fnBatch)) {
-                            P8Logger.logRepositoryObjectProperties(logger, repositoryObject, fnObjectType, count);
+                    }
+                    if (fnObjectType.equals(FnObjectType.SECURITY_POLICY)){
+                        if(!(repositoryObject.getProperties().getDependentObjectListValue("SecurityTemplates").isEmpty())){
+                            SecurityTemplateList securityTemplateList = (SecurityTemplateList) repositoryObject.getProperties().getDependentObjectListValue("SecurityTemplates");
+                            securityTemplatescount += securityTemplateList.size();
+                            collectPermissionsFromSecurityTemplateList(p8realm, fnBatch, securityTemplateList);
                         }
-                        String objectId = repositoryObject.getProperties().getIdValue("Id").toString();
-                        if (!(repositoryObject.getProperties().getDependentObjectListValue("Permissions").isEmpty())) {
-                            AccessPermissionList permissionList = (AccessPermissionList) repositoryObject.getProperties().getDependentObjectListValue("Permissions");
-                            collectPermissionsFromRepositoryObjects(p8realm, fnObjectType, fnBatch,permissionList, objectId);
-                        }
-                        if (fnObjectType.equals(FnObjectType.CLASS_DEFINITION)){
-                            if (!(repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions").isEmpty())) {
-                                AccessPermissionList defaultInstancePermissionList = (AccessPermissionList) repositoryObject.getProperties().getDependentObjectListValue("DefaultInstancePermissions");
-                                collectPermissionsFromRepositoryObjects(p8realm, FnObjectType.CLASS_DEFINITION_DIP, fnBatch,defaultInstancePermissionList, objectId);
-                            }
-                        }
-                        if (fnObjectType.equals(FnObjectType.SECURITY_POLICY)){
-                            if(!(repositoryObject.getProperties().getDependentObjectListValue("SecurityTemplates").isEmpty())){
-                                SecurityTemplateList securityTemplateList = (SecurityTemplateList) repositoryObject.getProperties().getDependentObjectListValue("SecurityTemplates");
-                                securityTemplatescount += securityTemplateList.size();
-                                collectPermissionsFromSecurityTemplateList(p8realm, fnBatch, securityTemplateList);
-                            }
-                        }
-
-                    } while (it.hasNext());
-
-                }
-                int batchNumber = 0;
-                if (fnObjectType == FnObjectType.DOCUMENT || fnObjectType == FnObjectType.FOLDER){
-                    batchNumber = extractLockTimeoutValue(objectSearch);
+                    }
+                } while (it.hasNext());
+                int batchNumber =  0;
+                if (fnBatch != null){
+                    batchNumber = fnBatch.getBatchNumber();
                 }
                 updateSecurableObjectsAndBatchesStatus(fnObjectType, count, batchNumber ,securityTemplatescount);
-
             }
             else logger.info(String.format("No %s were found!", fnObjectType));
         }
@@ -294,10 +295,10 @@ public class P8SecurityCollector
         }
     }
 
-    private static void updateSecurableObjectsAndBatchesStatus(FnObjectType fnObjectType, int objectCount, int batchCount, int securityTemplatescount){
+    private static void updateSecurableObjectsAndBatchesStatus(FnObjectType fnObjectType, int objectCount, int batchNumber, int securityTemplatescount){
         boolean lastBatch = false;
         if (fnObjectType == FnObjectType.DOCUMENT || fnObjectType == FnObjectType.FOLDER){
-            FnBatch batch = BatchRepo.getInstance().getFnBatchByNumberAndType(fnObjectType, batchCount);
+            FnBatch batch = BatchRepo.getInstance().getFnBatchByNumberAndType(fnObjectType, batchNumber);
             batch.setObjectCount(objectCount);
             if (BatchRepo.getInstance().isLastBatchByStatus(batch)){
                 lastBatch = true;
@@ -307,7 +308,7 @@ public class P8SecurityCollector
                 batch.setBatchStatus('R');
             } else {
                 batch.setBatchStatus('E');
-                logger.error(String.format("There were errors retrieving %s Batch# %d security", fnObjectType, batchCount));
+                logger.error(String.format("There were errors retrieving %s Batch# %d security", fnObjectType, batchNumber));
             }
             BatchRepo.getInstance().updateFnBatch(batch);
         }
@@ -319,7 +320,6 @@ public class P8SecurityCollector
             } else {
                 securableObject.setProcessStatus('E');
             }
-            securableObject.setProcessStatus('R');
             SecurableObjectRepo.getInstance().updateSecurableObject(securableObject);
             logger.info(String.format("Total %s: %d", fnObjectType, objectCount));
             if (fnObjectType.equals(FnObjectType.SECURITY_POLICY)) {
@@ -331,7 +331,6 @@ public class P8SecurityCollector
                 } else {
                     securityTemplatesObject.setProcessStatus('E');
                 }
-                securityTemplatesObject.setProcessStatus('R');
                 SecurableObjectRepo.getInstance().updateSecurableObject(securityTemplatesObject);
             }
         }

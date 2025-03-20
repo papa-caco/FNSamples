@@ -84,18 +84,26 @@ public class ResultExporter {
         // Escribir filas
         int count = 0;
         while (resultSet.next()) {
+            SecurableObject securableObject = null;
             String tableName = resultSet.getString("table_name");
             int lineCount = resultSet.getInt("row_count");
             int securityIdCount = resultSet.getInt("security_id_count");
             if (!tableName.equalsIgnoreCase("ConversionSettings") && !tableName.equalsIgnoreCase("SweepRelationship") && !tableName.equalsIgnoreCase("RecoveryBin")){
                 if(!SecurableObjectRepo.getInstance().existsSecurableObject(tableName)){
-                    SecurableObject securableObject = new SecurableObject(tableName, lineCount, securityIdCount);
+                    securableObject = new SecurableObject(tableName, lineCount, securityIdCount);
                     SecurableObjectRepo.getInstance().createSecurableObject(securableObject);
+                } else if (SecurableObjectRepo.getInstance().securableObjectHasDifferences(tableName, lineCount)){
+                    securableObject = SecurableObjectRepo.getInstance().getSecurableObjectByTableName(tableName);
+                    int newObjectCount = lineCount - securableObject.getLineCount();
+                    logger.info(String.format("Found %d new Objects - Type %s", newObjectCount, securableObject.getFnObjectType()));
+                    securableObject.setLineCount(lineCount);
+                    securableObject.setProcessStatus('N');
+                    SecurableObjectRepo.getInstance().updateSecurableObject(securableObject);
                 }
                 count++;
             }
         }
-        logger.info(String.format("%d Types of Engine Objects found in Object Store", count));
+        logger.info(String.format("Found Engine Objects from %d Tables at Object Store Database", count));
     }
 
     public static void exportUsersToCsv(List<User> users, String filePath) throws IOException {
